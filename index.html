@@ -602,7 +602,7 @@ html += `<button onclick="applyTheme('${t.id}')" class="h-5 w-5 md:h-6 md:w-6 ro
 container.innerHTML = html;
 }
 
-function loadSavedThemes() { renderHeaderThemeButtons(); let savedBgTheme = localStorage.getItem('gwc_bg_theme') || 'th_def'; applyTheme(savedBgTheme); }
+function loadSavedThemes() { renderHeaderThemeButtons(); let savedBgTheme = localStorage.getItem('gwc_bg_theme') || 'th3'; applyTheme(savedBgTheme); }
 loadDataFromFirebase(); window.addEventListener('DOMContentLoaded', () => { loadSavedThemes(); setTimeout(() => { document.getElementById('intro_screen').style.display = 'none'; document.getElementById('login_screen').classList.remove('hidden'); }, 1200); });
 function applyRBAC() { document.getElementById('role_badge').innerText = currentRole; document.getElementById('current_user_display').innerText = currentUser; let editAreas = document.querySelectorAll('.rbac-edit-area'); editAreas.forEach(el => el.style.display = currentRole === 'View' ? 'none' : 'block'); let editCols = document.querySelectorAll('.rbac-edit-col'); editCols.forEach(el => el.style.display = currentRole === 'View' ? 'none' : 'table-cell'); document.getElementById('admin_user_management').style.display = currentRole === 'Main' ? 'block' : 'none'; document.getElementById('btn_admin_logs').style.display = currentRole === 'Main' ? 'flex' : 'none'; document.getElementById('menu_card_master').style.display = currentRole === 'Main' ? 'block' : 'none'; }
 
@@ -773,6 +773,12 @@ function saveInward(e) {
 e.preventDefault(); let idx = parseInt(document.getElementById('in_edit_idx').value);
 let item = { date: document.getElementById('in_date').value, oc: document.getElementById('in_oc').value.toUpperCase().trim(), supplier: document.getElementById('in_supplier').value.toUpperCase().trim(), dc: document.getElementById('in_dc').value.trim(), pdc: document.getElementById('in_pdc').value.trim(), grn: document.getElementById('in_grn').value.trim(), lot: document.getElementById('in_lot').value.trim(), rack: document.getElementById('in_rack').value.trim(), dia: document.getElementById('in_dia').value.trim(), color: document.getElementById('in_color').value.toUpperCase().trim(), fabric: document.getElementById('in_fabric').value.toUpperCase().trim(), roll: parseInt(document.getElementById('in_roll').value) || 0, weight: parseFloat(document.getElementById('in_weight').value) || 0, remarks: document.getElementById('in_remarks').value.trim() };
 if(idx >= 0) { db.inward[idx] = item; document.getElementById('in_btn_save').innerText = "Save Inward Entry"; } else { db.inward.push(item); }
+    // Inward-ல் இருந்து மாஸ்டர் டேட்டாவில் சேர்ப்பதற்கான கோடு
+addToMasterIfNotExists('OC_NO', item.oc); 
+addToMasterIfNotExists('FABRIC', item.fabric); 
+addToMasterIfNotExists('COLOR', item.color); 
+addToMasterIfNotExists('DIA', item.dia); 
+addToMasterIfNotExists('SUPPLIER', item.supplier);
 saveDB('inward'); document.getElementById('inwardForm').reset(); document.getElementById('in_edit_idx').value = "-1"; renderInwardPageTable();
 }
 function editInward(i) { let r = db.inward[i]; document.getElementById('in_edit_idx').value = i; document.getElementById('in_date').value = r.date; document.getElementById('in_oc').value = r.oc; document.getElementById('in_supplier').value = r.supplier; document.getElementById('in_dc').value = r.dc; document.getElementById('in_pdc').value = r.pdc; document.getElementById('in_grn').value = r.grn; document.getElementById('in_lot').value = r.lot; document.getElementById('in_rack').value = r.rack; document.getElementById('in_dia').value = r.dia; document.getElementById('in_color').value = r.color; document.getElementById('in_fabric').value = r.fabric; document.getElementById('in_roll').value = r.roll; document.getElementById('in_weight').value = r.weight; document.getElementById('in_remarks').value = r.remarks; document.getElementById('in_btn_save').innerText = "Update Inward Entry"; window.scrollTo(0,0); }
@@ -792,6 +798,13 @@ function saveOutward(e) {
 e.preventDefault(); let idx = parseInt(document.getElementById('out_edit_idx').value);
 let item = { date: document.getElementById('out_date').value, oc: document.getElementById('out_oc').value.toUpperCase().trim(), dc: document.getElementById('out_dc').value.trim(), grn: document.getElementById('out_grn').value.trim(), out_dc: document.getElementById('out_out_dc').value.trim(), color: document.getElementById('out_color').value.toUpperCase().trim(), fabric: document.getElementById('out_fabric').value.toUpperCase().trim(), dia: document.getElementById('out_dia').value.trim(), roll: parseInt(document.getElementById('out_roll').value) || 0, weight: parseFloat(document.getElementById('out_weight').value) || 0, lot: document.getElementById('out_lot').value.trim(), location: document.getElementById('out_location').value.toUpperCase().trim(), purpose: document.getElementById('out_purpose').value.toUpperCase().trim(), remarks: document.getElementById('out_remarks').value.trim() };
 if(idx >= 0) { db.outward[idx] = item; document.getElementById('out_btn_save').innerText = "Save Outward Entry"; } else { db.outward.push(item); }
+    // Outward-ல் இருந்து மாஸ்டர் டேட்டாவில் சேர்ப்பதற்கான கோடு
+addToMasterIfNotExists('OC_NO', item.oc); 
+addToMasterIfNotExists('FABRIC', item.fabric); 
+addToMasterIfNotExists('COLOR', item.color); 
+addToMasterIfNotExists('DIA', item.dia); 
+addToMasterIfNotExists('DELIVERY_LOCATION', item.location); 
+addToMasterIfNotExists('PURPOSE', item.purpose);
 saveDB('outward'); document.getElementById('outwardForm').reset(); document.getElementById('out_edit_idx').value = "-1"; renderOutwardPageTable();
 }
 function editOutward(i) { let r = db.outward[i]; document.getElementById('out_edit_idx').value = i; document.getElementById('out_date').value = r.date; document.getElementById('out_oc').value = r.oc; document.getElementById('out_dc').value = r.dc; document.getElementById('out_grn').value = r.grn; document.getElementById('out_out_dc').value = r.out_dc; document.getElementById('out_color').value = r.color; document.getElementById('out_fabric').value = r.fabric; document.getElementById('out_dia').value = r.dia; document.getElementById('out_roll').value = r.roll; document.getElementById('out_weight').value = r.weight; document.getElementById('out_lot').value = r.lot; document.getElementById('out_location').value = r.location; document.getElementById('out_purpose').value = r.purpose; document.getElementById('out_remarks').value = r.remarks; document.getElementById('out_btn_save').innerText = "Update Outward Entry"; window.scrollTo(0,0); }
