@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GWC Fabric ERP - Premium Dashboard Edition</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<style>
+/* Modern Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.search-results { position: absolute; z-index: 50; width: 100%; max-height: 180px; overflow-y: auto; background-color: white; border: 2px solid #1e1b4b; border-top: none; border-radius: 0 0 12px 12px; }
+.search-item { padding: 10px 12px; cursor: pointer; font-size: 13px; text-transform: uppercase; color: black; }
+.search-item:hover, .search-item.active { background-color: #e0e7ff; color: #1e1b4b; font-weight: bold; }
+
+/* Menu Cards CSS */
+.menu-card { position: relative; border-radius: 24px; padding: 20px; padding-top: 60px; text-align: center; transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; margin-top: 40px; }
+.menu-card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); }
+.menu-icon-container { position: absolute; top: -40px; left: 50%; transform: translateX(-50%); width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 10; }
+
+.btn-3d { transition: all 0.1s ease; border-bottom-width: 5px; }
+.btn-3d:active { transform: translateY(5px); border-bottom-width: 0px; margin-bottom: 5px; }
+
+/* Mobile Responsive Table CSS */
+.table-grid th, .table-grid td { border: 1px solid #d1d5db; white-space: nowrap; padding: 0.5rem; }
+.table-grid { border-collapse: collapse; }
+
+.search-input-ms { padding-right: 25px; cursor: text; }
+.search-input-ms::placeholder { color: #312e81; font-weight: 700; opacity: 1; text-transform: uppercase; }
+.editable-cell { background-color: #fef9c3; border: 1px dashed #ca8a04 !important; outline: none; }
+.editable-cell:focus { background-color: #fff; border: 2px solid #ca8a04 !important; }
+.quick-link-btn { transition: transform 0.2s ease, background-color 0.2s ease; }
+.quick-link-btn:hover { transform: scale(1.15); }
+
+#main_body { transition: background-image 0.5s ease-in-out; background-size: cover; background-position: center; background-attachment: fixed; }
+
+/* Mobile View Adjustments */
+@media (max-width: 768px) {
+.menu-card { margin-top: 30px; padding: 15px; padding-top: 45px; }
+.menu-icon-container { width: 60px; height: 60px; font-size: 30px; top: -30px; }
+}
+
+/* ========================================================
+🌟 GLASSMORPHISM FORM THEME (Adapts to Gradient Backgrounds)
+======================================================== */
+.theme-card {
+background: rgba(255, 255, 255, 0.85);
+backdrop-filter: blur(16px);
+-webkit-backdrop-filter: blur(16px);
+border: 1px solid rgba(255, 255, 255, 0.5);
+color: #000;
+transition: all 0.3s ease;
+}
+.theme-card table { background-color: rgba(255, 255, 255, 0.9); }
+.fcr-folding-head { background-color: #FEF9C3 !important; color: #000000 !important; border: 1px solid #FDE047 !important; }
+
+/* Login Page specific styling */
+.login-glass {
+background: rgba(0, 0, 0, 0.5);
+backdrop-filter: blur(12px);
+border: 1px solid rgba(255, 255, 255, 0.2);
+box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+</style>
+<!-- Firebase Connected for Live Database -->
+<!-- ஏற்கனவே உள்ளவை -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<!-- புதிதாக கீழே சேர்க்க வேண்டியது -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+</head>
+<body id="main_body" class="font-sans text-gray-800 antialiased min-h-screen">
+
+<div id="intro_screen" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-center">
+<div><h1 class="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 tracking-wider">GWC</h1><p class="text-xs md:text-sm uppercase text-gray-400 font-bold tracking-widest mt-2">FABRIC ERP PORTAL</p></div>
+</div>
+
+<div id="login_screen" class="hidden fixed inset-0 flex items-center justify-center px-4 z-40 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=1920&auto=format&fit=crop');">
+<div class="login-glass p-6 md:p-8 rounded-3xl w-full max-w-md relative z-10 text-white">
+<div class="text-center mb-6"><h2 id="login_title" class="text-2xl md:text-3xl font-black tracking-wide">Login</h2></div>
+<div id="auth_error" class="hidden bg-red-500/90 text-white text-xs font-bold p-3 rounded-xl mb-4 text-center shadow-lg">❌ Invalid Username or Password!</div>
+<div class="space-y-4 md:space-y-5">
+<div><label class="block text-xs font-bold text-white/90 uppercase tracking-wider mb-1">Username</label><div class="relative"><span class="absolute inset-y-0 right-3 flex items-center text-white/60">👤</span><input type="text" id="login_user" placeholder="Enter username..." class="w-full p-3 md:p-3.5 bg-white/20 border border-white/30 text-black focus:border-white outline-none rounded-xl transition font-medium placeholder-gray-300 text-sm"></div></div>
+<div id="pass_block">
+<label class="block text-xs font-bold text-white/90 uppercase tracking-wider mb-1">Password</label>
+<div class="relative">
+<input type="password" id="login_pass" placeholder="••••••••" class="w-full p-3 md:p-3.5 bg-white/20 border border-white/30 text-black focus:border-white outline-none rounded-xl transition placeholder-gray-300 pr-10 text-sm">
+<button type="button" onclick="toggleLoginPassword()" class="absolute inset-y-0 right-3 flex items-center text-white/60 hover:text-white transition focus:outline-none">
+<span id="eye_icon" class="text-lg">👁️</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between text-xs font-bold pt-1"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded accent-purple-500"> Remember Me</label><button onclick="toggleAuthMode('forgot')" class="hover:text-purple-300 transition">Forget Password</button></div>
+<button onclick="handleAuthAction()" id="btn_auth_primary" class="w-full bg-white text-gray-900 p-3 md:p-3.5 font-black rounded-full shadow-lg hover:bg-gray-200 transition tracking-wide cursor-pointer text-sm">Log in</button>
+<div class="text-center pt-3 text-xs font-bold">Don't have an account? <button onclick="toggleAuthMode('register')" id="btn_auth_toggle" class="text-purple-300 hover:text-white transition uppercase">Register</button></div>
+</div>
+</div>
+</div>
+
+<div id="app_interface" class="hidden">
+<header id="main_header" class="p-4 md:p-6 shadow-xl flex flex-col md:flex-row justify-between items-center rounded-b-3xl border-b-4 border-indigo-900 relative gap-4 md:gap-0 bg-gray-900/80 backdrop-blur-md text-white">
+<div class="text-center md:text-left w-full md:w-auto">
+<h1 class="text-xl md:text-2xl font-extrabold tracking-wider flex items-center justify-center md:justify-start gap-2">🧵 GWC FABRIC ERP <span id="role_badge" class="bg-yellow-500 text-black text-[9px] md:text-[10px] px-2 py-1 rounded-md font-black shadow-md">MAIN</span></h1>
+<p class="text-[9px] md:text-[10px] text-indigo-200 uppercase font-medium tracking-widest mt-1">Logged in as: <span id="current_user_display" class="font-bold text-white"></span></p>
+</div>
+<div class="flex items-center gap-2 md:gap-3 flex-wrap justify-center w-full md:w-auto">
+<div class="flex flex-wrap items-center gap-1.5 md:gap-2 mr-0 md:mr-2 border-r-0 md:border-r border-white/20 pr-0 md:pr-4 justify-center w-full md:w-auto mb-2 md:mb-0" id="header_theme_buttons_container">
+<span class="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase mr-1 w-full md:w-auto text-center md:text-left">Themes:</span>
+<!-- Theme buttons will be injected here via JS -->
+</div>
+<button id="btn_home_menu" onclick="showMainMenuHub()" class="hidden bg-white/10 hover:bg-white/20 border border-white/30 rounded-xl px-3 py-1.5 md:px-4 md:py-2 flex items-center gap-1.5 md:gap-2 text-xs md:text-sm font-bold shadow-md transition cursor-pointer">🏠 Menu Hub</button>
+<button id="btn_admin_logs" onclick="document.getElementById('logs_modal').classList.remove('hidden')" class="hidden bg-yellow-500 hover:bg-yellow-600 text-yellow-950 rounded-xl px-3 py-1.5 md:px-4 md:py-2 flex items-center gap-1.5 md:gap-2 text-xs md:text-sm font-bold shadow-md transition cursor-pointer">🔔 Logs</button>
+<button onclick="openCreatorPopup()" class="bg-black/10 hover:bg-blue/20 border border-yellow/30 rounded-full h-8 w-8 md:h-10 md:w-10 flex items-center justify-center font-bold shadow-md transition cursor-pointer text-xs md:text-base">VR</button>
+<button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white rounded-xl px-3 py-1.5 md:px-4 md:py-2 flex items-center gap-1.5 md:gap-2 text-xs md:text-sm font-bold shadow-md transition cursor-pointer">🚪 Logout</button>
+</div>
+</header>
+
+<div id="main_menu_hub" class="max-w-7xl mx-auto p-4 mt-4 md:mt-8 pb-12 block">
+<div class="bg-white/80 backdrop-blur-md p-6 md:p-8 rounded-3xl shadow-2xl border border-white/50 relative">
+<h2 class="text-xl md:text-2xl font-black text-indigo-900 text-center mb-8 md:mb-10 tracking-wider">🌟 CHOOSE MODULE</h2>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 px-1 md:px-2">
+<div onclick="openAppPage('requirement')" class="menu-card bg-gradient-to-br from-pink-700 to-rose-600 text-white"><div class="menu-icon-container text-rose-500 shadow-lg shadow-pink-500/50">📦</div><h3 class="font-black text-xs sm:text-sm md:text-lg uppercase tracking-wider mb-1">Requirement</h3><p class="text-[8px] sm:text-[9px] md:text-[10px] font-medium text-pink-100">Setup Target Weights</p></div>
+<div onclick="openAppPage('inward')" class="menu-card bg-gradient-to-br from-blue-600 to-indigo-600 text-white"><div class="menu-icon-container text-blue-500 shadow-lg shadow-blue-500/50">📥</div><h3 class="font-black text-xs sm:text-sm md:text-lg uppercase tracking-wider mb-1">Inward Entry</h3><p class="text-[8px] sm:text-[9px] md:text-[10px] font-medium text-blue-100">Fabric Receiving</p></div>
+<div onclick="openAppPage('outward')" class="menu-card bg-gradient-to-br from-green-600 to-yellow-600 text-white"><div class="menu-icon-container text-red-500 bg-red-100 shadow-lg shadow-green-500/50" style="background-color: #e8484b !important;">📤</div><h3 class="font-black text-xs sm:text-sm md:text-lg uppercase tracking-wider mb-1">Outward Entry</h3><p class="text-[8px] sm:text-[9px] md:text-[10px] font-medium text-emerald-100">Fabric Dispatching</p></div>
+<div onclick="openAppPage('reconciliation')" class="menu-card bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white"><div class="menu-icon-container text-purple-500 shadow-lg shadow-purple-500/50">📊</div><h3 class="font-black text-xs sm:text-sm md:text-lg uppercase tracking-wider mb-1">Dashboard</h3><p class="text-[8px] sm:text-[9px] md:text-[10px] font-medium text-purple-100">Charts & Summary</p></div>
+<!-- NEW PREMIUM FCR CARD GRADIENT -->
+<div onclick="openAppPage('fcr')" class="menu-card bg-gradient-to-br from-yellow-700 to-red-600 text-white border-2 border-white/50"><div class="menu-icon-container text-yellow-600 shadow-lg shadow-amber-500/50">📑</div><h3 class="font-black text-xs sm:text-sm md:text-lg uppercase tracking-wider mb-1">FCR</h3><p class="text-[8px] sm:text-[9px] md:text-[10px] font-medium text-amber-100">Fabric Closing Report</p></div>
+
+<div id="menu_card_master" onclick="openAppPage('master')" class="menu-card bg-gradient-to-br from-gray-700 to-gray-900 text-white"><div class="menu-icon-container text-gray-700 shadow-lg shadow-gray-500/50">⚙️</div><h3 class="font-black text-xs sm:text-sm md:text-lg uppercase tracking-wider mb-1">Master Data</h3><p class="text-[8px] sm:text-[9px] md:text-[10px] font-medium text-gray-300">Settings & Lists</p></div>
+</div>
+</div>
+</div>
+
+<main id="content_pages_wrapper" class="max-w-7xl mx-auto p-4 mt-2 hidden">
+
+<!-- REQUIREMENT PAGE -->
+<section id="page-requirement" style="display: none;">
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card rbac-edit-area mb-6">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between border-b pb-4 mb-4 md:mb-6 gap-4">
+<h2 class="text-lg md:text-xl font-bold flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+<span>📦 Order Requirement Setup</span>
+<div class="flex flex-wrap gap-1 sm:ml-2 md:ml-4 sm:border-l-2 border-gray-300 sm:pl-2 md:pl-4 mt-2 sm:mt-0">
+<button onclick="openAppPage('requirement')" class="quick-link-btn h-7 w-7 rounded-full bg-pink-100 border border-pink-300 shadow flex items-center justify-center text-xs text-black" title="Requirement Page">📦</button>
+<button onclick="openAppPage('inward')" class="quick-link-btn h-7 w-7 rounded-full bg-blue-100 border border-blue-300 shadow flex items-center justify-center text-xs text-black" title="Inward Entry Page">📥</button>
+<button onclick="openAppPage('outward')" class="quick-link-btn h-7 w-7 rounded-full bg-red-100 border border-red-300 shadow flex items-center justify-center text-xs text-black" title="Outward Entry Page">📤</button>
+<button onclick="openAppPage('reconciliation')" class="quick-link-btn h-7 w-7 rounded-full bg-purple-100 border border-purple-300 shadow flex items-center justify-center text-xs text-black" title="Dashboard Page">📊</button>
+<button onclick="openAppPage('fcr')" class="quick-link-btn h-7 w-7 rounded-full bg-teal-100 border border-teal-300 shadow flex items-center justify-center text-xs text-black" title="FCR Report Page">📑</button>
+</div>
+</h2>
+</div>
+
+<form id="requirementForm" onsubmit="saveRequirement(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5" autocomplete="off">
+<input type="hidden" id="req_edit_idx" value="-1">
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">OC NO</label><input type="text" id="req_oc" onfocus="initSearch(this, 'OC_NO')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Colour</label><input type="text" id="req_color" onfocus="initSearch(this, 'COLOR', false, 'req_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Fabric Type</label><input type="text" id="req_fabric" onfocus="initSearch(this, 'FABRIC', false, 'req_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Parts</label><input type="text" id="req_component" onfocus="initSearch(this, 'PARTS')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">GSM</label><input type="text" id="req_gsm" onfocus="initSearch(this, 'GSM')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">DIA</label><input type="text" id="req_dia" onfocus="initSearch(this, 'DIA')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Requirement (KGS)</label><input type="number" step="0.001" id="req_weight" required class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div class="sm:col-span-2 lg:col-span-1 mt-2 md:mt-5 flex gap-3 items-end"><button type="submit" id="req_btn_save" class="w-full bg-pink-600 hover:bg-pink-700 text-white p-2.5 md:p-3 rounded-xl font-bold shadow-md transition cursor-pointer text-sm">Save Order Requirement</button></div>
+</form>
+</div>
+
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card mt-4 md:mt-6">
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+<h3 class="text-xs md:text-sm font-bold uppercase tracking-wider">📋 Registered Order Requirements</h3>
+<div class="flex gap-2">
+<button onclick="exportTableData('requirement', 'excel')" class="bg-green-500 hover:bg-green-600 text-white rounded-full h-8 w-8 flex items-center justify-center shadow font-bold text-xs">📊</button>
+<button onclick="exportTableData('requirement', 'image')" class="bg-purple-500 hover:bg-purple-600 text-white rounded-full h-8 w-8 flex items-center justify-center shadow font-bold text-xs">📸</button>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4" autocomplete="off">
+<div class="relative ms-container"><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">OC NO</label><div class="relative"><input type="text" id="txt_req_oc" placeholder="Select Option" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px] font-bold text-black bg-white search-input-ms" onclick="toggleDropdown('dd_req_oc')" onkeyup="filterMS('dd_req_oc', this.value)"><span class="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_req_oc" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-48 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">Colour</label><div class="relative"><input type="text" id="txt_req_color" placeholder="Select Option" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px] font-bold text-black bg-white search-input-ms" onclick="toggleDropdown('dd_req_color')" onkeyup="filterMS('dd_req_color', this.value)"><span class="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_req_color" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-48 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">Fabric Type</label><div class="relative"><input type="text" id="txt_req_fabric" placeholder="Select Option" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px] font-bold text-black bg-white search-input-ms" onclick="toggleDropdown('dd_req_fabric')" onkeyup="filterMS('dd_req_fabric', this.value)"><span class="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_req_fabric" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-48 overflow-y-auto p-1"></div></div>
+</div>
+
+<div id="req_table_wrap" class="overflow-x-auto border border-gray-200 rounded-2xl shadow-sm max-h-[400px] bg-white p-1">
+<table class="w-full text-[10px] md:text-[11px] text-left table-grid"><thead class="bg-gray-100 font-bold uppercase tracking-wider sticky top-0 text-black">
+<tr><th class="p-2 md:p-3">OC NO</th><th class="p-2 md:p-3">Fabric Type</th><th class="p-2 md:p-3">Colour</th><th class="p-2 md:p-3">Parts</th><th class="p-2 md:p-3">GSM</th><th class="p-2 md:p-3">DIA</th><th class="p-2 md:p-3 text-right">Target Req (KGS)</th><th class="p-2 md:p-3 text-center rbac-edit-col">Action</th></tr>
+</thead><tbody id="req_table_body" class="divide-y divide-gray-100 bg-white text-black"></tbody>
+<tfoot class="bg-gray-200 font-black text-black sticky bottom-0 border-t-2 border-gray-400"><tr><td colspan="6" class="p-2 text-right">TOTAL REQUIREMENT:</td><td id="req_tot_weight" class="p-2 text-right text-xs md:text-sm">0.000</td><td class="rbac-edit-col"></td></tr></tfoot></table>
+</div>
+</div>
+</section>
+
+<!-- INWARD PAGE -->
+<section id="page-inward" style="display: none;">
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card mb-4 md:mb-6 rbac-edit-area">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between border-b pb-4 mb-4 md:mb-6 gap-4">
+<h2 class="text-lg md:text-xl font-bold flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+<span>📥 Fabric Inward Record Form</span>
+<div class="flex flex-wrap gap-1 sm:ml-2 md:ml-4 sm:border-l-2 border-gray-300 sm:pl-2 md:pl-4 mt-2 sm:mt-0">
+<button onclick="openAppPage('requirement')" class="quick-link-btn h-7 w-7 rounded-full bg-pink-100 border border-pink-300 shadow flex items-center justify-center text-xs text-black" title="Requirement Page">📦</button>
+<button onclick="openAppPage('inward')" class="quick-link-btn h-7 w-7 rounded-full bg-blue-100 border border-blue-300 shadow flex items-center justify-center text-xs text-black" title="Inward Entry Page">📥</button>
+<button onclick="openAppPage('outward')" class="quick-link-btn h-7 w-7 rounded-full bg-red-100 border border-red-300 shadow flex items-center justify-center text-xs text-black" title="Outward Entry Page">📤</button>
+<button onclick="openAppPage('reconciliation')" class="quick-link-btn h-7 w-7 rounded-full bg-purple-100 border border-purple-300 shadow flex items-center justify-center text-xs text-black" title="Dashboard Page">📊</button>
+<button onclick="openAppPage('fcr')" class="quick-link-btn h-7 w-7 rounded-full bg-teal-100 border border-teal-300 shadow flex items-center justify-center text-xs text-black" title="FCR Report Page">📑</button>
+</div>
+</h2>
+</div>
+<form id="inwardForm" onsubmit="saveInward(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5" autocomplete="off">
+<input type="hidden" id="in_edit_idx" value="-1">
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">R.DATE</label><input type="date" id="in_date" required class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">OC NO</label><input type="text" id="in_oc" onfocus="initSearch(this, 'OC_NO')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Supplier Name</label><input type="text" id="in_supplier" onfocus="initSearch(this, 'SUPPLIER')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">DC NO</label><input type="text" id="in_dc" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">PDC NO</label><input type="text" id="in_pdc" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">GRN NO</label><input type="text" id="in_grn" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">LOT NO</label><input type="text" id="in_lot" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">RACK NO</label><input type="text" id="in_rack" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">DIA</label><input type="text" id="in_dia" onfocus="initSearch(this, 'DIA', false, 'in_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Colour</label><input type="text" id="in_color" onfocus="initSearch(this, 'COLOR', false, 'in_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Fabric Type</label><input type="text" id="in_fabric" onfocus="initSearch(this, 'FABRIC', false, 'in_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Roll Count</label><input type="number" id="in_roll" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Rec Weight (KGS)</label><input type="number" step="0.001" id="in_weight" required class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div class="sm:col-span-2 lg:col-span-2"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Remarks</label><input type="text" id="in_remarks" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div class="sm:col-span-2 lg:col-span-1 mt-2 md:mt-5 flex gap-3 items-end"><button type="submit" id="in_btn_save" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2.5 md:p-3 rounded-xl font-bold shadow-md transition text-sm">Save Inward Entry</button></div>
+</form>
+</div>
+
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card">
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+<h3 class="text-xs md:text-sm font-bold uppercase tracking-wider">🔍 Operational Logs (Inward)</h3>
+<div class="flex gap-2">
+<button onclick="exportTableData('inward', 'excel')" class="bg-green-500 hover:bg-green-600 text-white rounded-full h-8 w-8 flex items-center justify-center shadow font-bold text-xs">📊</button>
+<button onclick="exportTableData('inward', 'image')" class="bg-purple-500 hover:bg-purple-600 text-white rounded-full h-8 w-8 flex items-center justify-center shadow font-bold text-xs">📸</button>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4" autocomplete="off">
+<div><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">Date</label><input type="date" id="page_in_filter_date" onchange="renderInwardPageTable()" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px]"></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">OC NO</label><div class="relative"><input type="text" id="txt_in_oc" placeholder="Select Option" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px] font-bold text-black bg-white search-input-ms" onclick="toggleDropdown('dd_in_oc')" onkeyup="filterMS('dd_in_oc', this.value)"><span class="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_in_oc" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-48 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">Colour</label><div class="relative"><input type="text" id="txt_in_color" placeholder="Select Option" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px] font-bold text-black bg-white search-input-ms" onclick="toggleDropdown('dd_in_color')" onkeyup="filterMS('dd_in_color', this.value)"><span class="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_in_color" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-48 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">Fabric Type</label><div class="relative"><input type="text" id="txt_in_fabric" placeholder="Select Option" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px] font-bold text-black bg-white search-input-ms" onclick="toggleDropdown('dd_in_fabric')" onkeyup="filterMS('dd_in_fabric', this.value)"><span class="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_in_fabric" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-48 overflow-y-auto p-1"></div></div>
+</div>
+<div id="inward_table_wrap" class="overflow-x-auto border border-gray-300 rounded-2xl shadow-sm max-h-[400px] bg-white p-1">
+<table id="inward_table_el" class="w-full text-[10px] md:text-[11px] text-left table-grid"><thead class="bg-gray-100 text-black sticky top-0 font-bold uppercase tracking-wider"><tr><th class="p-2 border">R.DATE</th><th class="p-2 border">OC NO</th><th class="p-2 border">SUPPLIER</th><th class="p-2 border">DC NO</th><th class="p-2 border">PDC NO</th><th class="p-2 border">GRN NO</th><th class="p-2 border">LOT</th><th class="p-2 border">RACK</th><th class="p-2 border">DIA</th><th class="p-2 border">COLOUR</th><th class="p-2 border">FABRIC TYPE</th><th class="p-2 text-center border">ROLLS</th><th class="p-2 text-right border">WEIGHT</th><th class="p-2 text-center border rbac-edit-col">ACTIONS</th></tr></thead>
+<tbody id="page_inward_tbody" class="bg-white text-black"></tbody>
+<tfoot class="bg-gray-200 font-black text-black sticky bottom-0 border-t-2 border-gray-400"><tr><td colspan="11" class="p-2 text-right border">TOTAL:</td><td id="in_tot_roll" class="p-2 text-center border">0</td><td id="in_tot_weight" class="p-2 text-right border">0.000</td><td class="rbac-edit-col border"></td></tr></tfoot></table>
+</div>
+</div>
+</section>
+
+<section id="page-outward" style="display: none;">
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card mb-4 md:mb-6 rbac-edit-area">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between border-b pb-4 mb-4 md:mb-6 gap-4">
+<h2 class="text-lg md:text-xl font-bold flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+<span>📤 Fabric Outward Form</span>
+<div class="flex flex-wrap gap-1 sm:ml-2 md:ml-4 sm:border-l-2 border-gray-300 sm:pl-2 md:pl-4 mt-2 sm:mt-0">
+<button onclick="openAppPage('requirement')" class="quick-link-btn h-7 w-7 rounded-full bg-pink-100 border border-pink-300 shadow flex items-center justify-center text-xs text-black" title="Requirement Page">📦</button>
+<button onclick="openAppPage('inward')" class="quick-link-btn h-7 w-7 rounded-full bg-blue-100 border border-blue-300 shadow flex items-center justify-center text-xs text-black" title="Inward Entry Page">📥</button>
+<button onclick="openAppPage('outward')" class="quick-link-btn h-7 w-7 rounded-full bg-red-100 border border-red-300 shadow flex items-center justify-center text-xs text-black" title="Outward Entry Page">📤</button>
+<button onclick="openAppPage('reconciliation')" class="quick-link-btn h-7 w-7 rounded-full bg-purple-100 border border-purple-300 shadow flex items-center justify-center text-xs text-black" title="Dashboard Page">📊</button>
+<button onclick="openAppPage('fcr')" class="quick-link-btn h-7 w-7 rounded-full bg-teal-100 border border-teal-300 shadow flex items-center justify-center text-xs text-black" title="FCR Report Page">📑</button>
+</div>
+</h2>
+</div>
+<form id="outwardForm" onsubmit="saveOutward(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5" autocomplete="off">
+<input type="hidden" id="out_edit_idx" value="-1">
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">DATE</label><input type="date" id="out_date" required class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">OC NO</label><input type="text" id="out_oc" onfocus="initSearch(this, 'OC_NO')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">DC NO</label><input type="text" id="out_dc" onfocus="initSearch(this, 'DC', false, 'out_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">GRN NO</label><input type="text" id="out_grn" onfocus="initSearch(this, 'GRN', false, 'out_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">OUT DC NO</label><input type="text" id="out_out_dc" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Colour</label><input type="text" id="out_color" onfocus="initSearch(this, 'COLOR', false, 'out_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Fabric Type</label><input type="text" id="out_fabric" onfocus="initSearch(this, 'FABRIC', false, 'out_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">DIA</label><input type="text" id="out_dia" onfocus="initSearch(this, 'DIA', false, 'out_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Roll Count</label><input type="number" id="out_roll" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Send Weight (KGS)</label><input type="number" step="0.001" id="out_weight" required class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">LOT</label><input type="text" id="out_lot" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Delivery Location</label><input type="text" id="out_location" onfocus="initSearch(this, 'DELIVERY_LOCATION', false, 'out_oc')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="relative"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Purpose</label><input type="text" id="out_purpose" onfocus="initSearch(this, 'PURPOSE')" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none uppercase bg-white/90 text-black text-sm"><div class="search-results hidden"></div></div>
+<div class="sm:col-span-2 lg:col-span-2"><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Remarks</label><input type="text" id="out_remarks" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none bg-white/90 text-black text-sm"></div>
+<div class="sm:col-span-2 lg:col-span-1 mt-2 md:mt-5 flex gap-3 items-end"><button type="submit" id="out_btn_save" class="w-full bg-red-600 hover:bg-red-700 text-white p-2.5 md:p-3 rounded-xl font-bold shadow-md transition text-sm">Save Outward Entry</button></div>
+</form>
+</div>
+
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card">
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+<h3 class="text-xs md:text-sm font-bold uppercase tracking-wider">🔍 Operational Logs (Outward)</h3>
+<div class="flex gap-2">
+<button onclick="exportTableData('outward', 'excel')" class="bg-green-500 hover:bg-green-600 text-white rounded-full h-8 w-8 flex items-center justify-center shadow font-bold text-xs">📊</button>
+<button onclick="exportTableData('outward', 'image')" class="bg-purple-500 hover:bg-purple-600 text-white rounded-full h-8 w-8 flex items-center justify-center shadow font-bold text-xs">📸</button>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4" autocomplete="off">
+<div><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">Date</label><input type="date" id="page_out_filter_date" onchange="renderOutwardPageTable()" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px]"></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">OC NO</label><div class="relative"><input type="text" id="txt_out_oc" placeholder="Select Option" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px] font-bold text-black bg-white search-input-ms" onclick="toggleDropdown('dd_out_oc')" onkeyup="filterMS('dd_out_oc', this.value)"><span class="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_out_oc" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-48 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">Colour</label><div class="relative"><input type="text" id="txt_out_color" placeholder="Select Option" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px] font-bold text-black bg-white search-input-ms" onclick="toggleDropdown('dd_out_color')" onkeyup="filterMS('dd_out_color', this.value)"><span class="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_out_color" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-48 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-[11px] font-bold opacity-70 uppercase">Fabric Type</label><div class="relative"><input type="text" id="txt_out_fabric" placeholder="Select Option" class="w-full p-2 border border-gray-300 rounded-xl text-xs outline-none h-[36px] font-bold text-black bg-white search-input-ms" onclick="toggleDropdown('dd_out_fabric')" onkeyup="filterMS('dd_out_fabric', this.value)"><span class="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_out_fabric" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-48 overflow-y-auto p-1"></div></div>
+</div>
+<div id="outward_table_wrap" class="overflow-x-auto border border-gray-300 rounded-2xl shadow-sm max-h-[400px] bg-white p-1">
+<table id="outward_table_el" class="w-full text-[10px] md:text-[11px] text-left table-grid"><thead class="bg-gray-100 text-black sticky top-0 font-bold uppercase tracking-wider"><tr><th class="p-2 border">DATE</th><th class="p-2 border">OC NO</th><th class="p-2 border">IN DC</th><th class="p-2 border">OUT DC</th><th class="p-2 border">GRN</th><th class="p-2 border">LOT</th><th class="p-2 border">DIA</th><th class="p-2 border">COLOUR</th><th class="p-2 border">FABRIC TYPE</th><th class="p-2 border">LOCATION</th><th class="p-2 border">PURPOSE</th><th class="p-2 text-center border">ROLLS</th><th class="p-2 text-right border">WEIGHT</th><th class="p-2 text-center border rbac-edit-col">ACTIONS</th></tr></thead>
+<tbody id="page_outward_tbody" class="bg-white text-black"></tbody>
+<tfoot class="bg-gray-200 font-black text-black sticky bottom-0 border-t-2 border-gray-400"><tr><td colspan="11" class="p-2 text-right border">TOTAL:</td><td id="out_tot_roll" class="p-2 text-center border">0</td><td id="out_tot_weight" class="p-2 text-right border">0.000</td><td class="rbac-edit-col border"></td></tr></tfoot></table>
+</div>
+</div>
+</section>
+
+<section id="page-reconciliation" style="display: none;">
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card mb-4 md:mb-6">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between border-b pb-4 mb-4 md:mb-6 gap-4">
+<h2 class="text-lg md:text-xl font-bold flex flex-wrap items-center gap-3">
+<span>🔍 Analytics & Reporting Filters</span>
+<div class="flex flex-wrap gap-1 sm:ml-2 md:ml-4 sm:border-l-2 border-gray-300 sm:pl-2 md:pl-4 mt-2 sm:mt-0">
+<button onclick="openAppPage('requirement')" class="quick-link-btn h-7 w-7 rounded-full bg-pink-100 border border-pink-300 shadow flex items-center justify-center text-xs text-black" title="Requirement Page">📦</button>
+<button onclick="openAppPage('inward')" class="quick-link-btn h-7 w-7 rounded-full bg-blue-100 border border-blue-300 shadow flex items-center justify-center text-xs text-black" title="Inward Entry Page">📥</button>
+<button onclick="openAppPage('outward')" class="quick-link-btn h-7 w-7 rounded-full bg-red-100 border border-red-300 shadow flex items-center justify-center text-xs text-black" title="Outward Entry Page">📤</button>
+<button onclick="openAppPage('reconciliation')" class="quick-link-btn h-7 w-7 rounded-full bg-purple-100 border border-purple-300 shadow flex items-center justify-center text-xs text-black" title="Dashboard Page">📊</button>
+<button onclick="openAppPage('fcr')" class="quick-link-btn h-7 w-7 rounded-full bg-teal-100 border border-teal-300 shadow flex items-center justify-center text-xs text-black" title="FCR Report Page">📑</button>
+</div>
+</h2>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4" autocomplete="off">
+<div class="relative ms-container"><label class="block text-[10px] md:text-xs font-bold opacity-70 uppercase tracking-wider mb-1">Order (OC NO)</label><div class="relative"><input type="text" id="txt_dash_oc" placeholder="Select Option" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl text-xs bg-white h-[42px] font-bold text-black search-input-ms outline-none" onclick="toggleDropdown('dd_dash_oc')" onkeyup="filterMS('dd_dash_oc', this.value)"><span class="absolute right-3 top-3 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_dash_oc" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-56 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-xs font-bold opacity-70 uppercase tracking-wider mb-1">Fabric Type</label><div class="relative"><input type="text" id="txt_dash_fabric" placeholder="Select Option" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl text-xs bg-white h-[42px] font-bold text-black search-input-ms outline-none" onclick="toggleDropdown('dd_dash_fabric')" onkeyup="filterMS('dd_dash_fabric', this.value)"><span class="absolute right-3 top-3 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_dash_fabric" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-56 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-xs font-bold opacity-70 uppercase tracking-wider mb-1">Colour</label><div class="relative"><input type="text" id="txt_dash_color" placeholder="Select Option" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl text-xs bg-white h-[42px] font-bold text-black search-input-ms outline-none" onclick="toggleDropdown('dd_dash_color')" onkeyup="filterMS('dd_dash_color', this.value)"><span class="absolute right-3 top-3 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_dash_color" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-56 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-xs font-bold opacity-70 uppercase tracking-wider mb-1">DIA</label><div class="relative"><input type="text" id="txt_dash_dia" placeholder="Select Option" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl text-xs bg-white h-[42px] font-bold text-black search-input-ms outline-none" onclick="toggleDropdown('dd_dash_dia')" onkeyup="filterMS('dd_dash_dia', this.value)"><span class="absolute right-3 top-3 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_dash_dia" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-56 overflow-y-auto p-1"></div></div>
+<div class="relative ms-container"><label class="block text-[10px] md:text-xs font-bold opacity-70 uppercase tracking-wider mb-1">Delivery Location</label><div class="relative"><input type="text" id="txt_dash_loc" placeholder="Select Option" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl text-xs bg-white h-[42px] font-bold text-black search-input-ms outline-none" onclick="toggleDropdown('dd_dash_loc')" onkeyup="filterMS('dd_dash_loc', this.value)"><span class="absolute right-3 top-3 text-[10px] text-gray-400 pointer-events-none">▼</span></div><div id="dd_dash_loc" class="ms-dropdown-menu absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden max-h-56 overflow-y-auto p-1"></div></div>
+</div>
+
+<div class="mt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div class="flex items-center gap-2 w-full md:w-auto">
+<label class="font-bold text-xs md:text-sm opacity-70">Chart Style:</label>
+<select id="chart_type_selector" onchange="runReconciliation()" class="p-2 border border-gray-400 rounded-lg bg-white/90 outline-none text-xs md:text-sm font-bold text-black shadow-sm cursor-pointer w-full md:w-auto"><option value="bar">Bar Chart</option><option value="pie">Pie Chart</option><option value="line">Line Chart</option><option value="doughnut">Doughnut Chart</option></select>
+</div>
+<button onclick="runReconciliation()" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs md:text-sm uppercase px-8 py-3 rounded-xl shadow-md transition">🔍 Generate Dashboard</button>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mt-5 border-t border-gray-300/50 pt-4">
+<button onclick="exportToExcelPremium('filtered', 'dashboard')" class="btn-3d bg-green-500 border-green-700 hover:bg-green-600 text-white p-2 md:p-3 rounded-xl font-black shadow-lg text-[10px] md:text-xs uppercase text-center flex items-center justify-center gap-1 md:gap-2">📊 Excel (Filtered)</button>
+<button onclick="exportToExcelPremium('overall', 'dashboard')" class="btn-3d bg-blue-500 border-blue-700 hover:bg-blue-600 text-white p-2 md:p-3 rounded-xl font-black shadow-lg text-[10px] md:text-xs uppercase text-center flex items-center justify-center gap-1 md:gap-2">📦 Excel (Full Stock)</button>
+<button onclick="exportToImage('reconciliation-card')" class="btn-3d bg-indigo-500 border-indigo-700 hover:bg-indigo-600 text-white p-2 md:p-3 rounded-xl font-black shadow-lg text-[10px] md:text-xs uppercase text-center flex items-center justify-center gap-1 md:gap-2">📸 Image</button>
+<button onclick="exportAdvancedPDF()" class="btn-3d bg-red-500 border-red-700 hover:bg-red-600 text-white p-2 md:p-3 rounded-xl font-black shadow-lg text-[10px] md:text-xs uppercase text-center flex items-center justify-center gap-1 md:gap-2">📑 PDF Report</button>
+</div>
+</div>
+
+<div id="reconciliation-card" class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card mb-6 hidden">
+<div class="border-b pb-3 mb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+<div><h2 class="text-lg md:text-xl font-bold">📊 Order Closing Summary & Live Chart</h2></div>
+<span id="closing_oc_badge" class="px-4 py-1 bg-gray-800 text-white text-xs md:text-sm font-black rounded-full text-center">OC: ALL</span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8 border border-gray-200 rounded-2xl p-4 shadow-sm bg-white/50">
+<div class="mx-auto w-full flex flex-col items-center"><h4 class="text-[10px] md:text-xs font-bold text-gray-500 uppercase text-center mb-2">Weight Comparison (KGS)</h4><div class="relative w-full h-[200px] md:h-[250px]"><canvas id="barChart"></canvas></div></div>
+<div class="mx-auto w-full flex flex-col items-center"><h4 class="text-[10px] md:text-xs font-bold text-gray-500 uppercase text-center mb-2">Stock Availability Overview</h4><div class="relative w-full h-[200px] md:h-[250px]"><canvas id="doughnutChart"></canvas></div></div>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+<div class="bg-yellow-50 p-3 md:p-4 rounded-2xl border border-yellow-200 text-center shadow-sm"><p class="text-[9px] md:text-xs text-yellow-800 font-bold uppercase tracking-wider">Total Requirement</p><p id="sum_requirement" class="text-lg md:text-2xl font-black text-yellow-900 mt-1">0.000</p></div>
+<div class="bg-blue-50 p-3 md:p-4 rounded-2xl border border-blue-200 text-center shadow-sm"><p class="text-[9px] md:text-xs text-blue-700 font-bold uppercase tracking-wider">Total Received</p><p id="sum_inward" class="text-lg md:text-2xl font-black text-blue-900 mt-1">0.000</p></div>
+<div class="bg-red-50 p-3 md:p-4 rounded-2xl border border-red-200 text-center shadow-sm"><p class="text-[9px] md:text-xs text-red-700 font-bold uppercase tracking-wider">Total Dispatched</p><p id="sum_outward" class="text-lg md:text-2xl font-black text-red-900 mt-1">0.000</p></div>
+<div class="bg-green-50 p-3 md:p-4 rounded-2xl border border-green-200 text-center shadow-sm"><p class="text-[9px] md:text-xs text-green-700 font-bold uppercase tracking-wider">Available Balance</p><p id="sum_balance" class="text-lg md:text-2xl font-black text-green-900 mt-1">0.000</p></div>
+</div>
+
+<div class="mb-6 md:mb-8">
+<h4 class="font-extrabold text-blue-900 mb-2 md:mb-3 text-xs md:text-sm uppercase tracking-wider">Inward Report Matrix Logs</h4>
+<div class="overflow-x-auto border border-gray-200 rounded-2xl shadow-sm max-h-[300px] bg-white">
+<table id="pdf_inward_table" class="w-full text-[10px] md:text-[11px] text-left table-grid"><thead class="bg-blue-100 text-blue-900 sticky top-0 font-bold uppercase"><tr><th class="p-2 border">R.DATE</th><th class="p-2 border">OC NO</th><th class="p-2 border">SUPPLIER</th><th class="p-2 border">DC</th><th class="p-2 border">PDC</th><th class="p-2 border">GRN</th><th class="p-2 border">LOT</th><th class="p-2 border">RACK</th><th class="p-2 border">DIA</th><th class="p-2 border">COLOUR</th><th class="p-2 border">FABRIC TYPE</th><th class="p-2 border text-center">ROLLS</th><th class="p-2 border text-right">WEIGHT</th></tr></thead><tbody id="report_inward_tbody" class="bg-white text-black"></tbody></table>
+</div>
+</div>
+<div>
+<h4 class="font-extrabold text-red-900 mb-2 md:mb-3 text-xs md:text-sm uppercase tracking-wider">Outward Report Matrix Logs</h4>
+<div class="overflow-x-auto border border-gray-200 rounded-2xl shadow-sm max-h-[300px] bg-white">
+<table id="pdf_outward_table" class="w-full text-[10px] md:text-[11px] text-left table-grid"><thead class="bg-red-100 text-red-900 sticky top-0 font-bold uppercase"><tr><th class="p-2 border">DATE</th><th class="p-2 border">OC NO</th><th class="p-2 border">IN DC</th><th class="p-2 border">OUT DC</th><th class="p-2 border">GRN</th><th class="p-2 border">LOT</th><th class="p-2 border">DIA</th><th class="p-2 border">COLOUR</th><th class="p-2 border">FABRIC TYPE</th><th class="p-2 border font-bold">LOCATION</th><th class="p-2 border">PURPOSE</th><th class="p-2 border text-center">ROLLS</th><th class="p-2 border text-right">WEIGHT</th></tr></thead><tbody id="report_outward_tbody" class="bg-white text-black"></tbody></table>
+</div>
+</div>
+</div>
+</section>
+
+<section id="page-fcr" style="display: none;">
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card mb-4 md:mb-6">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between border-b pb-4 mb-4 md:mb-6 gap-4">
+<h2 class="text-lg md:text-xl font-bold flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
+<span>📑 Fabric Closing Report (FCR)</span>
+<div class="flex flex-wrap gap-1 sm:ml-2 md:ml-4 sm:border-l-2 border-gray-300 sm:pl-2 md:pl-4 mt-2 sm:mt-0">
+<button onclick="openAppPage('requirement')" class="quick-link-btn h-7 w-7 rounded-full bg-pink-100 border border-pink-300 shadow flex items-center justify-center text-xs text-black" title="Requirement Page">📦</button>
+<button onclick="openAppPage('inward')" class="quick-link-btn h-7 w-7 rounded-full bg-blue-100 border border-blue-300 shadow flex items-center justify-center text-xs text-black" title="Inward Entry Page">📥</button>
+<button onclick="openAppPage('outward')" class="quick-link-btn h-7 w-7 rounded-full bg-red-100 border border-red-300 shadow flex items-center justify-center text-xs text-black" title="Outward Entry Page">📤</button>
+<button onclick="openAppPage('reconciliation')" class="quick-link-btn h-7 w-7 rounded-full bg-purple-100 border border-purple-300 shadow flex items-center justify-center text-xs text-black" title="Dashboard Page">📊</button>
+<button onclick="openAppPage('fcr')" class="quick-link-btn h-7 w-7 rounded-full bg-teal-100 border border-teal-300 shadow flex items-center justify-center text-xs text-black" title="FCR Report Page">📑</button>
+</div>
+</h2>
+<div class="flex flex-wrap gap-2 w-full lg:w-auto">
+<button onclick="exportToExcelPremium('fcr', 'fcr')" class="flex-1 lg:flex-none bg-green-500 hover:bg-green-600 text-white px-3 md:px-4 py-2 rounded-xl font-bold text-xs shadow transition">📊 Excel</button>
+<button onclick="exportToImage('fcr_main_container')" class="flex-1 lg:flex-none bg-purple-500 hover:bg-purple-600 text-white px-3 md:px-4 py-2 rounded-xl font-bold text-xs shadow transition">📸 Image</button>
+<button onclick="exportFCRPDF()" class="flex-1 lg:flex-none bg-red-500 hover:bg-red-600 text-white px-3 md:px-4 py-2 rounded-xl font-bold text-xs shadow transition">📑 PDF</button>
+</div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-4 md:mb-6">
+<div class="sm:col-span-2">
+<label class="block text-[10px] md:text-xs font-bold opacity-70 uppercase tracking-wider mb-1">Select OC NO to Generate FCR</label>
+<select id="fcr_oc_filter" class="w-full p-2 md:p-2.5 border border-gray-400 rounded-xl outline-none font-bold bg-white text-black text-sm">
+<option value="">-- SELECT OC NO --</option>
+</select>
+</div>
+<div class="flex items-end"><button onclick="generateFCRReport()" class="w-full bg-green-800 hover:bg-green-900 text-white p-2.5 rounded-xl font-bold shadow-md transition uppercase text-xs md:text-sm">🔄 Generate</button></div>
+<div class="flex items-end"><button onclick="saveFCRDraft()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white p-2.5 rounded-xl font-bold shadow-md transition uppercase text-xs md:text-sm">💾 Save Draft</button></div>
+<div class="flex items-end"><button onclick="saveOCClosing()" id="fcr_btn_close" class="w-full bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-xl font-bold shadow-md transition uppercase text-xs md:text-sm">🔒 OC Close</button></div>
+</div>
+
+<div class="flex justify-end mb-4 relative ms-container hidden" id="fcr_print_wrapper">
+<button onclick="toggleDropdown('fcr_print_dd')" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-bold shadow-md transition uppercase text-xs md:text-sm flex items-center justify-center gap-2">🖨️ Print Report ▼</button>
+<div id="fcr_print_dd" class="ms-dropdown-menu absolute z-50 right-0 top-10 w-full sm:w-48 mt-1 bg-white border border-gray-200 shadow-xl rounded-xl hidden p-2 text-black">
+<div onclick="exportFCR_Comprehensive('pdf')" class="p-2 hover:bg-indigo-50 cursor-pointer text-xs font-bold text-indigo-900 rounded border-b border-gray-100">📄 PDF Format</div>
+<div onclick="exportFCR_Comprehensive('excel')" class="p-2 hover:bg-indigo-50 cursor-pointer text-xs font-bold text-green-700 rounded border-b border-gray-100">📊 Excel Format</div>
+<div onclick="exportFCR_Comprehensive('word')" class="p-2 hover:bg-indigo-50 cursor-pointer text-xs font-bold text-blue-700 rounded border-b border-gray-100">📝 Word Format</div>
+<div onclick="exportFCR_Comprehensive('image')" class="p-2 hover:bg-indigo-50 cursor-pointer text-xs font-bold text-purple-700 rounded">📸 Image Format</div>
+</div>
+</div>
+
+<div id="fcr_full_report_wrapper" class="hidden bg-white p-4 md:p-6 border border-gray-300 rounded-2xl shadow-sm text-black">
+<div class="text-center mb-4 md:mb-6">
+<h3 class="text-lg md:text-xl font-black uppercase flex justify-center items-center gap-2 flex-wrap">OC NO: <span id="fcr_display_oc"></span> <span id="fcr_status_badge" class="bg-gray-200 text-gray-800 text-[9px] md:text-[10px] px-2 py-1 rounded-full shadow-sm"></span></h3>
+</div>
+
+<h4 class="font-extrabold text-center mb-2 text-[10px] md:text-xs uppercase tracking-wider mt-2 md:mt-4">REQUIREMENT</h4>
+<div class="overflow-x-auto border border-gray-200 shadow-sm mb-4 md:mb-6">
+<table id="fcr_req_table" class="w-full text-[10px] md:text-[11px] text-left table-grid">
+<thead class="bg-gray-100 font-bold uppercase text-black"><tr><th class="p-2 border">OC NO</th><th class="p-2 border">Fabric Type</th><th class="p-2 border">Colour</th><th class="p-2 border">Parts</th><th class="p-2 border">GSM</th><th class="p-2 border">DIA</th><th class="p-2 text-right border">Target Req (KGS)</th></tr></thead>
+<tbody id="fcr_req_tbody" class="bg-white"></tbody>
+</table>
+</div>
+<h4 class="font-extrabold text-center mb-2 text-[10px] md:text-xs uppercase tracking-wider">INWARD REPORT</h4>
+<div class="overflow-x-auto border border-gray-200 shadow-sm mb-4 md:mb-6">
+<table id="fcr_inward_table" class="w-full text-[10px] md:text-[11px] text-left table-grid">
+<thead class="bg-gray-100 font-bold uppercase text-black"><tr><th class="p-2 border">R.DATE</th><th class="p-2 border">OC NO</th><th class="p-2 border">SUPPLIER</th><th class="p-2 border">DC</th><th class="p-2 border">PARTY DC NO</th><th class="p-2 border">GRN</th><th class="p-2 border">LOT</th><th class="p-2 border">RACK NO</th><th class="p-2 border">DIA</th><th class="p-2 border">COLOUR</th><th class="p-2 border">FABRIC</th><th class="p-2 text-center border">ROLL</th><th class="p-2 text-right border">RECD WEIGHT</th></tr></thead>
+<tbody id="fcr_inward_tbody" class="bg-white"></tbody>
+</table>
+</div>
+<h4 class="font-extrabold text-center mb-2 text-[10px] md:text-xs uppercase tracking-wider">OUTWARD REPORT</h4>
+<div class="overflow-x-auto border border-gray-200 shadow-sm mb-4 md:mb-6">
+<table id="fcr_outward_table" class="w-full text-[10px] md:text-[11px] text-left table-grid">
+<thead class="bg-gray-100 font-bold uppercase text-black"><tr><th class="p-2 border">DATE</th><th class="p-2 border">OC NO</th><th class="p-2 border">IN DC</th><th class="p-2 border">OUT DC</th><th class="p-2 border">GRN</th><th class="p-2 border">LOT</th><th class="p-2 border">DIA</th><th class="p-2 border">COLOUR</th><th class="p-2 border">FABRIC TYPE</th><th class="p-2 border">LOCATION</th><th class="p-2 border">PURPOSE</th><th class="p-2 text-center border">ROLLS</th><th class="p-2 text-right border">WEIGHT</th></tr></thead>
+<tbody id="fcr_outward_tbody" class="bg-white"></tbody>
+</table>
+</div>
+
+<div id="fcr_main_container" class="mt-4">
+<h4 class="font-extrabold text-center mb-2 text-[10px] md:text-xs uppercase tracking-wider">FABRIC CLOSING REPORT</h4>
+<div class="overflow-x-auto border border-gray-300 shadow-sm">
+<table class="w-full text-[10px] md:text-[11px] text-center table-grid" id="fcr_table_export">
+<thead class="bg-gray-200 text-black font-bold uppercase">
+<tr>
+<th class="p-2 w-10 border border-gray-400">SL NO</th><th class="p-2 text-left min-w-[150px] border border-gray-400">FABRIC NAME</th><th class="p-2 text-left min-w-[120px] border border-gray-400">COLOR</th>
+<th class="p-2 bg-pink-100 border border-gray-400">PO QTY</th><th class="p-2 bg-blue-100 border border-gray-400">OC GRN QTY</th><th class="p-2 bg-indigo-100 border border-gray-400">GRN BAL</th>
+<th class="p-2 bg-red-100 border border-gray-400">CUTTING ISSUE</th><th class="p-2 fcr-folding-head border border-gray-400">FOLDING</th><th class="p-2 bg-purple-100 border border-gray-400">SAMPLE</th>
+<th class="p-2 bg-gray-100 border border-gray-400">REPROCESS</th><th class="p-2 bg-yellow-100 border border-gray-400">CUT RETURN</th><th class="p-2 bg-green-100 border border-gray-400">HAND STOCK</th>
+</tr>
+</thead>
+<tbody id="fcr_tbody" class="bg-white divide-y divide-gray-200"></tbody>
+<tfoot class="bg-gray-100 text-gray-900 font-black border-t-2 border-gray-500">
+<tr>
+<td colspan="3" class="p-2 text-right border border-gray-400">GRAND TOTAL:</td>
+<td id="fcr_t_po" class="p-2 border border-gray-400">0.000</td><td id="fcr_t_grn" class="p-2 border border-gray-400">0.000</td><td id="fcr_t_bal" class="p-2 border border-gray-400">0.000</td>
+<td id="fcr_t_cut" class="p-2 border border-gray-400">0.000</td><td id="fcr_t_fold" class="p-2 border border-gray-400">0.000</td><td id="fcr_t_samp" class="p-2 border border-gray-400">0.000</td>
+<td id="fcr_t_rep" class="p-2 border border-gray-400">0.000</td><td id="fcr_t_ret" class="p-2 border border-gray-400">0.000</td><td id="fcr_t_hand" class="p-2 border border-gray-400">0.000</td>
+</tr>
+</tfoot>
+</table>
+</div>
+<p class="text-[9px] md:text-[10px] text-gray-500 mt-2 font-medium italic">* குறிப்பு: எண்களை மாற்றி அமைக்க டேபிள் Cell-ஐ நேரடியாக கிளிக் செய்து டைப் செய்யவும்.</p>
+</div>
+</div>
+
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card mt-4 md:mt-6">
+<h3 class="text-xs md:text-sm font-bold uppercase tracking-wider mb-3 md:mb-4">🗄️ Saved FCRs & Closed OCs</h3>
+<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+<table class="w-full text-[10px] md:text-xs text-left table-grid">
+<thead class="bg-gray-100 text-gray-800 font-bold uppercase">
+<tr><th class="p-2 border">OC NO</th><th class="p-2 border">Status</th><th class="p-2 border">Saved Date</th><th class="p-2 border">PO Total</th><th class="p-2 border">GRN Total</th><th class="p-2 border">Hand Stock</th><th class="p-2 text-center border">Action</th></tr>
+</thead>
+<tbody id="fcr_history_tbody" class="bg-white text-black"></tbody>
+</table>
+</div>
+</div>
+</section>
+
+<section id="page-master" style="display: none;">
+<div class="p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg theme-card mb-4 md:mb-6 rbac-edit-area">
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 md:mb-6 gap-3">
+<h2 class="text-lg md:text-xl font-bold">⚙️ Dropdown Master Lists</h2>
+<button onclick="clearUnwantedMasterData()" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold shadow text-xs transition">🧹 Clear Old Unwanted Data</button>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+<div>
+<h3 class="font-bold mb-2 md:mb-3 text-xs md:text-sm uppercase tracking-wider opacity-80">Add New Master Item</h3>
+<div class="space-y-3 md:space-y-4 bg-white/50 p-4 md:p-5 rounded-2xl border border-gray-200">
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Category</label><select id="master_category" class="w-full p-2 md:p-2.5 bg-white border border-gray-300 rounded-xl outline-none text-black text-xs md:text-sm"><option value="OC_NO">OC NUMBER</option><option value="COLOR">COLOUR</option><option value="FABRIC">FABRIC TYPE</option><option value="PARTS">PARTS</option><option value="SUPPLIER">SUPPLIER</option><option value="DELIVERY_LOCATION">DELIVERY LOCATION</option><option value="PURPOSE">PURPOSE</option><option value="DIA">DIA</option><option value="GSM">GSM</option></select></div>
+<div><label class="block text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1">Item Value Name</label><input type="text" id="master_value" class="w-full p-2 md:p-2.5 bg-white border border-gray-300 rounded-xl outline-none uppercase text-black text-xs md:text-sm"></div>
+<button onclick="addMasterItem()" class="w-full bg-gray-900 hover:bg-black text-white p-2.5 md:p-3 rounded-xl font-bold shadow transition text-xs md:text-sm">Add to List</button>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2 md:mb-3">
+<h3 class="font-bold text-xs md:text-sm uppercase tracking-wider opacity-80">Current Active Lists</h3>
+<button onclick="toggleMasterView()" id="btn-toggle-master" class="text-[10px] md:text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1.5 rounded-lg font-bold shadow-sm transition">Hide Active Lists</button>
+</div>
+<div id="master_wrapper" style="display: block;">
+<div id="master_display" class="bg-white/50 p-4 md:p-5 rounded-2xl border border-gray-200 space-y-3 md:space-y-4 max-h-96 overflow-y-auto text-xs md:text-sm text-black"></div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="admin_user_management" class="bg-white/90 p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-lg border border-gray-200 hidden text-black">
+<h2 class="text-lg md:text-xl font-black text-red-700 mb-3 md:mb-4">🛡️ User Management & Security Control (RBAC)</h2>
+<div class="overflow-x-auto rounded-xl border border-gray-200">
+<table class="w-full text-[10px] md:text-sm text-left table-grid">
+<thead class="bg-gray-100 font-bold uppercase text-gray-700"><tr><th class="p-2 md:p-3 border">Username</th><th class="p-2 md:p-3 border">Password</th><th class="p-2 md:p-3 border">Permission Role</th><th class="p-2 md:p-3 text-center border">Action</th></tr></thead>
+<tbody id="users_tbody" class="bg-white text-gray-800"></tbody>
+</table>
+</div>
+</div>
+</section>
+</main>
+</div>
+
+<div id="logs_modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onclick="closeLogsPopup(event)">
+<div class="bg-white rounded-3xl p-4 md:p-6 shadow-2xl border-2 border-yellow-400 w-full max-w-2xl relative text-black" onclick="event.stopPropagation()">
+<button onclick="document.getElementById('logs_modal').classList.add('hidden')" class="absolute right-4 top-4 text-gray-500 hover:text-black text-2xl font-bold cursor-pointer">&times;</button>
+<h2 class="text-lg md:text-xl font-black text-yellow-900 flex items-center gap-2 mb-2">🔔 System Access Logs</h2>
+<div class="overflow-x-auto rounded-xl border border-gray-200 max-h-64 overflow-y-auto"><table class="w-full text-[10px] md:text-xs text-left table-grid"><thead class="bg-gray-100 text-gray-800 font-bold uppercase sticky top-0"><tr><th class="p-2 md:p-2.5 border">ACTIVE USERNAME</th><th class="p-2 md:p-2.5 border">ROLE LEVEL</th><th class="p-2 md:p-2.5 border">AUTHENTICATION TIMESTAMP</th></tr></thead><tbody id="admin_users_tbody" class="divide-y divide-gray-100 bg-white text-gray-800"></tbody></table></div>
+</div>
+</div>
+
+<div id="creator_modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onclick="closeCreatorPopupViaOutside(event)">
+<div class="bg-gray-900 text-white rounded-3xl p-4 md:p-6 shadow-2xl border-2 border-indigo-400 w-full max-w-xl relative" onclick="event.stopPropagation()">
+<button onclick="document.getElementById('creator_modal').classList.add('hidden')" class="absolute right-4 top-4 text-gray-400 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+<div class="flex flex-col md:flex-row items-center gap-4 md:gap-6 border-b border-indigo-500/30 pb-4">
+<div class="h-20 w-20 md:h-28 md:w-28 rounded-full border-4 border-indigo-400 shadow-lg bg-indigo-900 flex-shrink-0 flex items-center justify-center"><span class="text-2xl md:text-3xl font-black text-white tracking-wider">VR</span></div>
+<div class="text-center md:text-left">
+<h3 class="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">CREATOR: VR</h3>
+<p class="text-[10px] md:text-xs font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Lead Web Architecture & ERP Engineer</p>
+<div class="text-[10px] md:text-xs text-gray-300 space-y-1 mt-2 md:mt-3 font-medium"><p>📞 <b>Contact:</b> +91 6380704783</p><p>📧 <b>Email:</b> mrj23q@gmail.com</p></div>
+</div></div></div></div>
+
+<script>
+Chart.register(ChartDataLabels);
+const DB_KEY = "gwc_domochon_v26_pro";
+let activeFocusIndex = -1; let currentUser = null; let currentRole = "View";
+let myBarChart = null; let myDoughnutChart = null; let fcrCurrentData = [];
+
+let activeFilters = { requirement: { OC_NO: [], COLOR: [], FABRIC: [] }, inward: { OC_NO: [], COLOR: [], FABRIC: [] }, outward: { OC_NO: [], COLOR: [], FABRIC: [] }, dashboard: { OC_NO: [], FABRIC: [], COLOR: [], DIA: [], DELIVERY_LOCATION: [] } };
+
+let defaultMaster = { requirement: [], inward: [], outward: [], fcr: [], users: [], activeSessions: [], master: { OC_NO: [], COLOR: [], FABRIC: [], DIA: [], GSM: [], PARTS: ["BODY", "SLEEVE", "PLACKET", "PANT", "ROMPER PIECE", "FOLDING", "RIB", "HAT", "BIB"], SUPPLIER: ["TEXCORP", "GLOBAL", "MERCURY", "VICTUS", "KONGOOR", "NETWORK CLOTHING", "SUREKHA", "SHANTHINI KNITS", "ESS EN", "THIRUMALA", "BBC KNITS", "MOTLEY", "GMS", "PS WEAVERS", "HO-CUTTING", "SREE ESWARA", "EXCEL INDIA", "SOWBARNIKA", "SUN BRIGHT"], DELIVERY_LOCATION: ["CUTTING", "PRODUCTION", "H.O TESTING", "BBC KNIT"], PURPOSE: ["CUTTING", "FOLDING", "SAMPLE", "PRODUCTION"] } };
+
+let db = { requirement: [], inward: [], outward: [], fcr: [], users: [], activeSessions: [], master: {} };
+
+const firebaseConfig = { apiKey: "AIzaSyCVK3vnjhf7kd4L7s-RxfZYXFhcRIhHXCc", authDomain: "gwc-erp.firebaseapp.com", databaseURL: "https://gwc-erp-default-rtdb.firebaseio.com", projectId: "gwc-erp", storageBucket: "gwc-erp.firebasestorage.app", messagingSenderId: "132557822093", appId: "1:132557822093:web:657e2b0abe271cc53f2ac4", measurementId: "G-NYSV8SSB7B" };
+firebase.initializeApp(firebaseConfig); const firestoreDB = firebase.firestore();
+const firebaseAuth = firebase.auth();
+function loadDataFromFirebase() {
+const collections = ['users', 'inward', 'outward', 'requirement', 'master', 'activeSessions', 'fcr'];
+collections.forEach(col => { firestoreDB.collection("gwc_erp").doc(col).onSnapshot((doc) => { if (doc.exists) { let incomingData = doc.data().data; if(incomingData !== undefined) db[col] = incomingData; if(col === 'master' && !db.master['PARTS']) { db.master['PARTS'] = ["BODY", "SLEEVE", "PLACKET", "PANT", "ROMPER PIECE", "FOLDING", "RIB", "HAT", "BIB"]; saveDB('master'); } if(col === 'inward' && document.getElementById('page-inward')?.style.display === 'block') renderInwardPageTable(); if(col === 'outward' && document.getElementById('page-outward')?.style.display === 'block') renderOutwardPageTable(); if(col === 'requirement' && document.getElementById('page-requirement')?.style.display === 'block') renderRequirementTable(); if(col === 'fcr' && document.getElementById('page-fcr')?.style.display === 'block') renderFcrHistory(); if(col === 'users') renderAdminUserManagement(); if(col === 'activeSessions') renderAdminSessionLogs(); if(col === 'master') { populateFCROCDropdown(); if(document.getElementById('page-master')?.style.display === 'block') renderMasterDisplayLists(); } } else { if(defaultMaster[col]) { db[col] = defaultMaster[col]; saveDB(col); } } }); });
+}
+
+function saveDB(moduleName) { if(!moduleName) return; firestoreDB.collection("gwc_erp").doc(moduleName).set({ data: db[moduleName] }).catch(err => console.error(err)); }
+
+function clearUnwantedMasterData() { if(confirm("பழைய OC, Fabric, Color, DIA, GSM டேட்டாக்களை முழுமையாக அழிக்க வேண்டுமா? (இது Database-ல் இருந்து நிரந்தரமாக அழிந்துவிடும்)")) { db.master['OC_NO'] = []; db.master['COLOR'] = []; db.master['FABRIC'] = []; db.master['DIA'] = []; db.master['GSM'] = []; saveDB('master'); renderMasterDisplayLists(); initAllMultiSelects(); populateFCROCDropdown(); alert("பழைய டேட்டாக்கள் வெற்றிகரமாக அழிக்கப்பட்டன!"); } }
+
+const uiThemes = [
+{ id: 'th_def', name: 'Default White', url: 'none', color: '#ffffff' },
+{ id: 'th1', name: 'High Res Gradient', url: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=1920&auto=format&fit=crop' },
+{ id: 'th2', name: 'Blue Gradient', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920&auto=format&fit=crop' },
+{ id: 'th3', name: 'Dark Blue Purple', url: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=1920&auto=format&fit=crop' },
+{ id: 'th4', name: 'Pastel 4k 3D', url: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=1920&auto=format&fit=crop' },
+{ id: 'th5', name: 'Blue Aesthetic Pastel', url: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1920&auto=format&fit=crop' },
+{ id: 'th6', name: 'Watercolor Pastel', url: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=1920&auto=format&fit=crop' },
+{ id: 'th7', name: 'Abstract Watercolor', url: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1920&auto=format&fit=crop' },
+{ id: 'th8', name: 'Rainbow Pastel Ombre', url: 'https://images.unsplash.com/photo-1505909182942-e2f09aee3e89?q=80&w=1920&auto=format&fit=crop' }
+];
+
+function applyTheme(id) {
+let t = uiThemes.find(x => x.id === id); if(!t) return;
+let bodyEl = document.getElementById('main_body');
+if(t.url === 'none') { bodyEl.style.backgroundImage = 'none'; bodyEl.style.backgroundColor = '#ffffff'; } else { bodyEl.style.backgroundImage = `url('${t.url}')`; bodyEl.style.backgroundColor = 'transparent'; }
+localStorage.setItem('gwc_bg_theme', id);
+}
+
+function renderHeaderThemeButtons() {
+let container = document.getElementById('header_theme_buttons_container'); if(!container) return;
+let html = `<span class="text-[9px] md:text-[10px] font-bold text-gray-300 uppercase mr-1 w-full md:w-auto text-center md:text-left">Themes:</span>`;
+uiThemes.forEach((t, i) => {
+let styleStr = t.url === 'none' ? `background-color: ${t.color};` : `background-image: url('${t.url}'); background-size: cover;`;
+let lbl = t.id === 'th_def' ? 'W' : i;
+html += `<button onclick="applyTheme('${t.id}')" class="h-5 w-5 md:h-6 md:w-6 rounded-full border-2 border-white shadow-md hover:scale-125 transition ml-1 text-[8px] font-black text-black flex items-center justify-center" style="${styleStr}" title="${t.name}">${lbl}</button>`;
+});
+container.innerHTML = html;
+}
+
+function loadSavedThemes() { renderHeaderThemeButtons(); let savedBgTheme = localStorage.getItem('gwc_bg_theme') || 'th_def'; applyTheme(savedBgTheme); }
+loadDataFromFirebase(); window.addEventListener('DOMContentLoaded', () => { loadSavedThemes(); setTimeout(() => { document.getElementById('intro_screen').style.display = 'none'; document.getElementById('login_screen').classList.remove('hidden'); }, 1200); });
+function applyRBAC() { document.getElementById('role_badge').innerText = currentRole; document.getElementById('current_user_display').innerText = currentUser; let editAreas = document.querySelectorAll('.rbac-edit-area'); editAreas.forEach(el => el.style.display = currentRole === 'View' ? 'none' : 'block'); let editCols = document.querySelectorAll('.rbac-edit-col'); editCols.forEach(el => el.style.display = currentRole === 'View' ? 'none' : 'table-cell'); document.getElementById('admin_user_management').style.display = currentRole === 'Main' ? 'block' : 'none'; document.getElementById('btn_admin_logs').style.display = currentRole === 'Main' ? 'flex' : 'none'; document.getElementById('menu_card_master').style.display = currentRole === 'Main' ? 'block' : 'none'; }
+
+let authMode = "login";
+function toggleLoginPassword() { let passInput = document.getElementById('login_pass'); let eyeIcon = document.getElementById('eye_icon'); if(passInput.type === 'password') { passInput.type = 'text'; eyeIcon.innerText = '🙈'; } else { passInput.type = 'password'; eyeIcon.innerText = '👁️'; } }
+function toggleAuthMode(mode) { authMode = mode; let err = document.getElementById('auth_error'); err.classList.add('hidden'); document.getElementById('login_title').innerText = mode === "login" ? "Login" : (mode === "register" ? "Register Account" : "Reset Password"); document.getElementById('btn_auth_primary').innerText = mode === "login" ? "Log in" : (mode === "register" ? "Sign Up" : "Reset Password"); document.getElementById('btn_auth_toggle').innerHTML = mode === "login" ? 'Register' : '<span onclick="toggleAuthMode(\'login\')">Back to Login</span>'; document.getElementById('pass_block').style.display = 'block'; }
+function handleAuthAction() { 
+    let userEmail = document.getElementById('login_user').value.trim(); 
+    let pass = document.getElementById('login_pass').value.trim(); 
+    let err = document.getElementById('auth_error'); 
+    err.classList.add('hidden'); 
+    
+    if(!userEmail || !pass) { 
+        err.innerText = "❌ Please fill all fields!"; 
+        err.classList.remove('hidden'); 
+        return; 
+    } 
+    
+    if(authMode === "register") { 
+        // புதிய அக்கவுண்ட் உருவாக்குதல்
+        firebaseAuth.createUserWithEmailAndPassword(userEmail, pass)
+        .then((userCredential) => {
+            // பாதுகாப்பாக Role-ஐ டேட்டாபேஸில் சேமிப்பது
+            firestoreDB.collection("gwc_users_roles").doc(userCredential.user.uid).set({
+                email: userEmail,
+                role: "View" // ஆரம்பத்தில் View Permission மட்டுமே இருக்கும்
+            });
+            alert("🎉 Registered successfully! Please Login."); 
+            toggleAuthMode('login'); 
+        })
+        .catch((error) => {
+            err.innerText = "❌ " + error.message; 
+            err.classList.remove('hidden');
+        });
+    } else if (authMode === "forgot") { 
+        // பாஸ்வேர்ட் ரீசெட் செய்ய Email அனுப்புதல்
+        firebaseAuth.sendPasswordResetEmail(userEmail)
+        .then(() => {
+            alert("✅ Password reset email sent! Check your inbox.");
+            toggleAuthMode('login');
+        })
+        .catch((error) => {
+            err.innerText = "❌ " + error.message; 
+            err.classList.remove('hidden');
+        });
+    } else { 
+        // லாகின் சரிபார்த்தல் (Login Validation)
+        firebaseAuth.signInWithEmailAndPassword(userEmail, pass)
+        .then((userCredential) => {
+            // லாகின் ஆனவுடன் டேட்டாபேஸில் இருந்து Role-ஐ எடுப்பது
+            firestoreDB.collection("gwc_users_roles").doc(userCredential.user.uid).get().then((doc) => {
+                if (doc.exists) {
+                    currentRole = doc.data().role;
+                } else {
+                    currentRole = "View";
+                }
+                currentUser = userEmail.split('@')[0]; // Email-ல் உள்ள பெயரை மட்டும் எடுப்பது
+                
+                // Dashboard-ஐ ஓபன் செய்வது
+                document.getElementById('login_screen').classList.add('hidden'); 
+                document.getElementById('app_interface').classList.remove('hidden'); 
+                applyRBAC(); 
+                showMainMenuHub(); 
+            });
+        })
+        .catch((error) => {
+            err.innerText = "❌ Invalid Email or Password!"; 
+            err.classList.remove('hidden');
+        });
+    } 
+}
+function logout() { location.reload(); }
+function renderAdminSessionLogs() { let tbody = document.getElementById('admin_users_tbody'); if(!tbody || !db.activeSessions) return; tbody.innerHTML = db.activeSessions.reverse().map(l => `<tr><td class="p-2 border">${l.username}</td><td class="p-2 border">${l.role}</td><td class="p-2 border">${l.time}</td></tr>`).join(''); }
+function renderAdminUserManagement() { let tbody = document.getElementById('users_tbody'); if(!tbody || currentRole !== 'Main' || !db.users) return; tbody.innerHTML = db.users.map((u, i) => `<tr><td class="p-2 font-bold border">${u.username}</td><td class="p-2 border"><input type="password" value="${u.password}" disabled class="bg-transparent text-gray-500" id="pw_${i}"><button onclick="togglePW('pw_${i}')" class="ml-2 text-[10px] bg-gray-200 px-2 py-1 rounded shadow">👁️ Show</button></td><td class="p-2 border"><select id="role_${i}" class="p-1 border rounded"><option value="View" ${u.role==='View'?'selected':''}>View</option><option value="Edit" ${u.role==='Edit'?'selected':''}>Edit</option><option value="Main" ${u.role==='Main'?'selected':''}>Main</option></select></td><td class="p-2 text-center border"><button onclick="updateUserRole(${i})" class="bg-blue-600 text-white px-3 py-1 rounded font-bold shadow text-xs">Approve</button></td></tr>`).join(''); }
+function togglePW(id) { let el = document.getElementById(id); el.type = el.type === "password" ? "text" : "password"; }
+function updateUserRole(i) { db.users[i].role = document.getElementById(`role_${i}`).value; saveDB('users'); alert("User Role Updated Successfully!"); applyRBAC(); }
+
+function showMainMenuHub() { document.getElementById('main_menu_hub').style.display = 'block'; document.getElementById('content_pages_wrapper').classList.add('hidden'); document.getElementById('btn_home_menu').classList.add('hidden'); }
+
+function openAppPage(pageId) {
+document.getElementById('main_menu_hub').style.display = 'none'; document.getElementById('content_pages_wrapper').classList.remove('hidden'); document.getElementById('btn_home_menu').classList.remove('hidden');
+['requirement', 'inward', 'outward', 'reconciliation', 'fcr', 'master'].forEach(p => { let element = document.getElementById(`page-${p}`); if(element) element.style.display = p === pageId ? 'block' : 'none'; });
+if(pageId === 'requirement') { activeFilters.requirement = { OC_NO: [], COLOR: [], FABRIC: [] }; initAllMultiSelects(); renderRequirementTable(); }
+if(pageId === 'inward') { activeFilters.inward = { OC_NO: [], COLOR: [], FABRIC: [] }; initAllMultiSelects(); renderInwardPageTable(); }
+if(pageId === 'outward') { activeFilters.outward = { OC_NO: [], COLOR: [], FABRIC: [] }; initAllMultiSelects(); renderOutwardPageTable(); }
+if(pageId === 'reconciliation') { activeFilters.dashboard = { OC_NO: [], FABRIC: [], COLOR: [], DIA: [], DELIVERY_LOCATION: [] }; initAllMultiSelects(); document.getElementById('reconciliation-card').classList.add('hidden'); }
+if(pageId === 'fcr') { populateFCROCDropdown(); renderFcrHistory(); }
+if(pageId === 'master') { renderMasterDisplayLists(); }
+window.scrollTo(0,0);
+}
+function closeLogsPopup(e) { document.getElementById('logs_modal').classList.add('hidden'); }
+function openCreatorPopup() { document.getElementById('creator_modal').classList.remove('hidden'); }
+function closeCreatorPopupViaOutside(e) { document.getElementById('creator_modal').classList.add('hidden'); }
+
+function initSearch(input, category, filterMode = false, dependencyId = null) {
+let container = input.nextElementSibling; if(!container) return; let list = db.master[category] || [];
+if(category === 'PARTS' && (!list || list.length === 0)) list = ["BODY", "SLEEVE", "PLACKET", "PANT", "ROMPER PIECE", "FOLDING", "RIB", "HAT", "BIB"];
+if(dependencyId) { let depVal = document.getElementById(dependencyId).value.toUpperCase(); if(depVal) { let validSet = new Set(); if(db.requirement) db.requirement.forEach(r => { if(r.oc === depVal) { if(category === 'COLOR' && r.color) validSet.add(r.color); if(category === 'FABRIC' && r.fabric) validSet.add(r.fabric); if(category === 'DIA' && r.dia) validSet.add(r.dia); if(category === 'GSM' && r.gsm) validSet.add(r.gsm); }}); if(db.inward) db.inward.forEach(r => { if(r.oc === depVal) { if(category === 'COLOR' && r.color) validSet.add(r.color); if(category === 'FABRIC' && r.fabric) validSet.add(r.fabric); if(category === 'DIA' && r.dia) validSet.add(r.dia); if(category === 'DC' && r.dc) validSet.add(r.dc); if(category === 'GRN' && r.grn) validSet.add(r.grn); }}); if(db.outward) db.outward.forEach(r => { if(r.oc === depVal) { if(category === 'DELIVERY_LOCATION' && r.location) validSet.add(r.location); if(category === 'COLOR' && r.color) validSet.add(r.color); if(category === 'FABRIC' && r.fabric) validSet.add(r.fabric); if(category === 'DIA' && r.dia) validSet.add(r.dia); }}); if(validSet.size > 0) list = Array.from(validSet); } }
+function showList(val) { let filtered = list.filter(item => item.toUpperCase().includes(val.toUpperCase())); if(filtered.length === 0) { container.classList.add('hidden'); return; } container.innerHTML = filtered.map((item, idx) => `<div class="search-item ${idx === activeFocusIndex ? 'active' : ''}" onclick="selectSearchItem('${input.id}', '${item}')">${item}</div>`).join(''); container.classList.remove('hidden'); }
+input.oninput = (e) => { activeFocusIndex = -1; showList(e.target.value); }; showList(input.value);
+input.onkeydown = (e) => { let items = container.querySelectorAll('.search-item'); if(e.key === 'ArrowDown') { activeFocusIndex = (activeFocusIndex + 1) % items.length; showList(input.value); e.preventDefault(); } else if(e.key === 'ArrowUp') { activeFocusIndex = (activeFocusIndex - 1 + items.length) % items.length; showList(input.value); e.preventDefault(); } else if(e.key === 'Enter') { if(items[activeFocusIndex]) { items[activeFocusIndex].click(); e.preventDefault(); } } };
+document.addEventListener('click', function closeS(e) { if(e.target !== input && e.target !== container) { container.classList.add('hidden'); document.removeEventListener('click', closeS); } });
+}
+function selectSearchItem(inputId, val) { let input = document.getElementById(inputId); if(!input) return; input.value = val; input.nextElementSibling.classList.add('hidden'); }
+function toggleDropdown(divId) { let el = document.getElementById(divId); let isHidden = el.classList.contains('hidden'); document.querySelectorAll('.ms-dropdown-menu').forEach(d => d.classList.add('hidden')); if(isHidden) el.classList.remove('hidden'); }
+document.addEventListener('click', (e) => { if(!e.target.closest('.ms-container')) { document.querySelectorAll('.ms-dropdown-menu').forEach(d => d.classList.add('hidden')); } });
+function filterMS(ddId, val) { let div = document.getElementById(ddId); if(!div) return; div.classList.remove('hidden'); let labels = div.querySelectorAll('.item-lbl'); let search = val.toUpperCase(); labels.forEach(lbl => { let text = lbl.innerText.toUpperCase(); lbl.style.display = text.includes(search) ? 'flex' : 'none'; }); }
+
+function initAllMultiSelects() {
+renderMultiSelectOptions('requirement', 'OC_NO', 'dd_req_oc', 'txt_req_oc'); renderMultiSelectOptions('requirement', 'COLOR', 'dd_req_color', 'txt_req_color'); renderMultiSelectOptions('requirement', 'FABRIC', 'dd_req_fabric', 'txt_req_fabric');
+renderMultiSelectOptions('inward', 'OC_NO', 'dd_in_oc', 'txt_in_oc'); renderMultiSelectOptions('inward', 'COLOR', 'dd_in_color', 'txt_in_color'); renderMultiSelectOptions('inward', 'FABRIC', 'dd_in_fabric', 'txt_in_fabric');
+renderMultiSelectOptions('outward', 'OC_NO', 'dd_out_oc', 'txt_out_oc'); renderMultiSelectOptions('outward', 'COLOR', 'dd_out_color', 'txt_out_color'); renderMultiSelectOptions('outward', 'FABRIC', 'dd_out_fabric', 'txt_out_fabric');
+renderMultiSelectOptions('dashboard', 'OC_NO', 'dd_dash_oc', 'txt_dash_oc'); renderMultiSelectOptions('dashboard', 'FABRIC', 'dd_dash_fabric', 'txt_dash_fabric'); renderMultiSelectOptions('dashboard', 'COLOR', 'dd_dash_color', 'txt_dash_color'); renderMultiSelectOptions('dashboard', 'DIA', 'dd_dash_dia', 'txt_dash_dia'); renderMultiSelectOptions('dashboard', 'DELIVERY_LOCATION', 'dd_dash_loc', 'txt_dash_loc');
+}
+
+function renderMultiSelectOptions(context, category, divId, textId) {
+let div = document.getElementById(divId); if (!div) return; let list = db.master[category] || []; let selectedOcs = activeFilters[context].OC_NO;
+if(category !== 'OC_NO' && selectedOcs && selectedOcs.length > 0 && !selectedOcs.includes('ALL')) {
+let validSet = new Set(); let sourceData = [];
+if(context === 'requirement') sourceData = db.requirement || []; else if(context === 'inward') sourceData = db.inward || []; else if(context === 'outward') sourceData = db.outward || []; else sourceData = [...(db.inward||[]), ...(db.outward||[])];
+sourceData.forEach(r => { if(selectedOcs.includes(r.oc)) { if(category === 'COLOR' && r.color) validSet.add(r.color); if(category === 'FABRIC' && r.fabric) validSet.add(r.fabric); if(category === 'DIA' && r.dia) validSet.add(r.dia); if(category === 'DELIVERY_LOCATION' && r.location) validSet.add(r.location); } });
+if(validSet.size > 0) list = Array.from(validSet);
+}
+let allChecked = activeFilters[context][category].includes('ALL') ? 'checked' : '';
+let html = `<label class="flex items-center gap-2 p-1.5 hover:bg-gray-100 cursor-pointer text-[11px] font-black text-blue-900 border-b border-gray-200"><input type="checkbox" class="rounded accent-blue-600 w-3.5 h-3.5" value="ALL" ${allChecked} onchange="handleMSChange('${context}', '${category}', this, '${textId}', '${divId}')"><span class="truncate mt-0.5 tracking-wider">🌟 ALL (Select Everything)</span></label>`;
+html += list.map(item => { let isChecked = activeFilters[context][category].includes(item) ? 'checked' : ''; return `<label class="item-lbl flex items-center gap-2 p-1.5 hover:bg-gray-50 cursor-pointer text-[11px] font-bold text-gray-700 border-b border-gray-100 last:border-b-0"><input type="checkbox" class="rounded accent-blue-600 w-3.5 h-3.5" value="${item}" ${isChecked} onchange="handleMSChange('${context}', '${category}', this, '${textId}', '${divId}')"><span class="truncate mt-0.5">${item}</span></label>`; }).join('');
+div.innerHTML = html;
+}
+
+function handleMSChange(context, category, checkbox, textId, divId) {
+let val = checkbox.value;
+if(val === 'ALL') { if(checkbox.checked) activeFilters[context][category] = ['ALL']; else activeFilters[context][category] = []; } else { activeFilters[context][category] = activeFilters[context][category].filter(x => x !== 'ALL'); if(checkbox.checked) { if(!activeFilters[context][category].includes(val)) activeFilters[context][category].push(val); } else { activeFilters[context][category] = activeFilters[context][category].filter(x => x !== val); } }
+let txt = document.getElementById(textId); let count = activeFilters[context][category].length;
+if(count === 0) { txt.placeholder = "Select Option"; txt.value = ""; } else if(activeFilters[context][category].includes('ALL')) { txt.placeholder = "ALL SELECTED"; txt.value = ""; } else if(count === 1) { txt.placeholder = activeFilters[context][category][0]; txt.value = ""; } else { txt.placeholder = `${count} Selected`; txt.value = ""; }
+if(category === 'OC_NO') {
+if(context === 'requirement') { activeFilters.requirement.COLOR = []; document.getElementById('txt_req_color').placeholder = "Select Option"; document.getElementById('txt_req_color').value = ""; activeFilters.requirement.FABRIC = []; document.getElementById('txt_req_fabric').placeholder = "Select Option"; document.getElementById('txt_req_fabric').value = ""; renderMultiSelectOptions('requirement', 'COLOR', 'dd_req_color', 'txt_req_color'); renderMultiSelectOptions('requirement', 'FABRIC', 'dd_req_fabric', 'txt_req_fabric'); }
+else if(context === 'inward') { activeFilters.inward.COLOR = []; document.getElementById('txt_in_color').placeholder = "Select Option"; document.getElementById('txt_in_color').value = ""; activeFilters.inward.FABRIC = []; document.getElementById('txt_in_fabric').placeholder = "Select Option"; document.getElementById('txt_in_fabric').value = ""; renderMultiSelectOptions('inward', 'COLOR', 'dd_in_color', 'txt_in_color'); renderMultiSelectOptions('inward', 'FABRIC', 'dd_in_fabric', 'txt_in_fabric'); }
+else if (context === 'outward') { activeFilters.outward.COLOR = []; document.getElementById('txt_out_color').placeholder = "Select Option"; document.getElementById('txt_out_color').value = ""; activeFilters.outward.FABRIC = []; document.getElementById('txt_out_fabric').placeholder = "Select Option"; document.getElementById('txt_out_fabric').value = ""; renderMultiSelectOptions('outward', 'COLOR', 'dd_out_color', 'txt_out_color'); renderMultiSelectOptions('outward', 'FABRIC', 'dd_out_fabric', 'txt_out_fabric'); }
+else if (context === 'dashboard') { activeFilters.dashboard.FABRIC = []; document.getElementById('txt_dash_fabric').placeholder = "Select Option"; activeFilters.dashboard.COLOR = []; document.getElementById('txt_dash_color').placeholder = "Select Option"; activeFilters.dashboard.DIA = []; document.getElementById('txt_dash_dia').placeholder = "Select Option"; activeFilters.dashboard.DELIVERY_LOCATION = []; document.getElementById('txt_dash_loc').placeholder = "Select Option"; renderMultiSelectOptions('dashboard', 'FABRIC', 'dd_dash_fabric', 'txt_dash_fabric'); renderMultiSelectOptions('dashboard', 'COLOR', 'dd_dash_color', 'txt_dash_color'); renderMultiSelectOptions('dashboard', 'DIA', 'dd_dash_dia', 'txt_dash_dia'); renderMultiSelectOptions('dashboard', 'DELIVERY_LOCATION', 'dd_dash_loc', 'txt_dash_loc'); }
+}
+renderMultiSelectOptions(context, category, divId, textId);
+if(context === 'requirement') renderRequirementTable(); else if(context === 'inward') renderInwardPageTable(); else if(context === 'outward') renderOutwardPageTable();
+}
+
+function addToMasterIfNotExists(cat, val) { if(!val) return; let upperVal = val.toUpperCase().trim(); if(!db.master[cat]) db.master[cat] = []; if(!db.master[cat].includes(upperVal)) { db.master[cat].push(upperVal); } }
+
+function saveRequirement(e) {
+e.preventDefault(); let idx = parseInt(document.getElementById('req_edit_idx').value);
+let item = { oc: document.getElementById('req_oc').value.toUpperCase().trim(), fabric: document.getElementById('req_fabric').value.toUpperCase().trim(), color: document.getElementById('req_color').value.toUpperCase().trim(), component: document.getElementById('req_component').value.toUpperCase().trim(), gsm: document.getElementById('req_gsm').value.toUpperCase().trim(), dia: document.getElementById('req_dia').value.toUpperCase().trim(), weight: parseFloat(document.getElementById('req_weight').value) || 0 };
+if(idx >= 0) { db.requirement[idx] = item; document.getElementById('req_btn_save').innerText = "Save Order Requirement"; } else { db.requirement.push(item); }
+addToMasterIfNotExists('OC_NO', item.oc); addToMasterIfNotExists('FABRIC', item.fabric); addToMasterIfNotExists('COLOR', item.color); addToMasterIfNotExists('DIA', item.dia); addToMasterIfNotExists('GSM', item.gsm); addToMasterIfNotExists('PARTS', item.component);
+saveDB('master'); saveDB('requirement'); document.getElementById('requirementForm').reset(); document.getElementById('req_edit_idx').value = "-1"; renderRequirementTable();
+}
+function editRequirement(i) { let r = db.requirement[i]; document.getElementById('req_edit_idx').value = i; document.getElementById('req_oc').value = r.oc; document.getElementById('req_fabric').value = r.fabric; document.getElementById('req_color').value = r.color; document.getElementById('req_component').value = r.component; document.getElementById('req_gsm').value = r.gsm || ''; document.getElementById('req_dia').value = r.dia || ''; document.getElementById('req_weight').value = r.weight; document.getElementById('req_btn_save').innerText = "Update Requirement"; window.scrollTo(0,0); }
+function renderRequirementTable() {
+let tbody = document.getElementById('req_table_body'); if(!tbody || !db.requirement) return;
+let selOc = activeFilters.requirement.OC_NO; let selColor = activeFilters.requirement.COLOR; let selFabric = activeFilters.requirement.FABRIC;
+if (selOc.length === 0 || selOc.includes('ALL')) { tbody.innerHTML = `<tr><td colspan="8" class="text-center p-8 text-gray-500 font-bold tracking-widest uppercase">Please select a specific OC NO to view the requirement data.</td></tr>`; document.getElementById('req_tot_weight').innerText = '0.000'; return; }
+let isAllColor = selColor.includes('ALL'); let isAllFabric = selFabric.includes('ALL');
+let records = db.requirement.map((r, i) => ({...r, originalIdx: i})).filter(r => (selOc.includes(r.oc)) && (selColor.length === 0 || isAllColor || selColor.includes(r.color)) && (selFabric.length === 0 || isAllFabric || selFabric.includes(r.fabric))).reverse();
+let totWeight = 0;
+tbody.innerHTML = records.map(r => { totWeight += (r.weight || 0); return `<tr><td class="p-2 md:p-3 border font-bold">${r.oc}</td><td class="p-2 md:p-3 border">${r.fabric}</td><td class="p-2 md:p-3 border">${r.color}</td><td class="p-2 md:p-3 border font-medium text-[10px] md:text-xs">${r.component}</td><td class="p-2 md:p-3 border text-[10px] md:text-xs font-bold">${r.gsm || ''}</td><td class="p-2 md:p-3 border text-[10px] md:text-xs font-bold">${r.dia || ''}</td><td class="p-2 md:p-3 border font-black text-right">${r.weight.toFixed(3)}</td><td class="p-2 md:p-3 border text-center rbac-edit-col" style="display:${currentRole==='View'?'none':'table-cell'}"><button onclick="editRequirement(${r.originalIdx})" class="text-blue-600 font-bold hover:underline mr-3">✏️</button><button onclick="deleteRequirement(${r.originalIdx})" class="text-red-600 font-bold hover:underline">🗑️</button></td></tr>`; }).join('');
+document.getElementById('req_tot_weight').innerText = totWeight.toFixed(3);
+}
+function deleteRequirement(i) { if(confirm("Purge row?")) { db.requirement.splice(i, 1); saveDB('requirement'); renderRequirementTable(); } }
+
+function saveInward(e) {
+e.preventDefault(); let idx = parseInt(document.getElementById('in_edit_idx').value);
+let item = { date: document.getElementById('in_date').value, oc: document.getElementById('in_oc').value.toUpperCase().trim(), supplier: document.getElementById('in_supplier').value.toUpperCase().trim(), dc: document.getElementById('in_dc').value.trim(), pdc: document.getElementById('in_pdc').value.trim(), grn: document.getElementById('in_grn').value.trim(), lot: document.getElementById('in_lot').value.trim(), rack: document.getElementById('in_rack').value.trim(), dia: document.getElementById('in_dia').value.trim(), color: document.getElementById('in_color').value.toUpperCase().trim(), fabric: document.getElementById('in_fabric').value.toUpperCase().trim(), roll: parseInt(document.getElementById('in_roll').value) || 0, weight: parseFloat(document.getElementById('in_weight').value) || 0, remarks: document.getElementById('in_remarks').value.trim() };
+if(idx >= 0) { db.inward[idx] = item; document.getElementById('in_btn_save').innerText = "Save Inward Entry"; } else { db.inward.push(item); }
+saveDB('inward'); document.getElementById('inwardForm').reset(); document.getElementById('in_edit_idx').value = "-1"; renderInwardPageTable();
+}
+function editInward(i) { let r = db.inward[i]; document.getElementById('in_edit_idx').value = i; document.getElementById('in_date').value = r.date; document.getElementById('in_oc').value = r.oc; document.getElementById('in_supplier').value = r.supplier; document.getElementById('in_dc').value = r.dc; document.getElementById('in_pdc').value = r.pdc; document.getElementById('in_grn').value = r.grn; document.getElementById('in_lot').value = r.lot; document.getElementById('in_rack').value = r.rack; document.getElementById('in_dia').value = r.dia; document.getElementById('in_color').value = r.color; document.getElementById('in_fabric').value = r.fabric; document.getElementById('in_roll').value = r.roll; document.getElementById('in_weight').value = r.weight; document.getElementById('in_remarks').value = r.remarks; document.getElementById('in_btn_save').innerText = "Update Inward Entry"; window.scrollTo(0,0); }
+function renderInwardPageTable() {
+let tbody = document.getElementById('page_inward_tbody'); if(!tbody || !db.inward) return;
+let fDate = document.getElementById('page_in_filter_date').value; let selOc = activeFilters.inward.OC_NO; let selColor = activeFilters.inward.COLOR; let selFabric = activeFilters.inward.FABRIC;
+if(!fDate && selOc.length === 0 && selColor.length === 0 && selFabric.length === 0) { tbody.innerHTML = `<tr><td colspan="14" class="text-center p-8 text-gray-500 font-bold tracking-widest uppercase">Please select a filter or click 'ALL' to view logs.</td></tr>`; document.getElementById('in_tot_roll').innerText = '0'; document.getElementById('in_tot_weight').innerText = '0.000'; return; }
+let isAllOc = selOc.includes('ALL'); let isAllColor = selColor.includes('ALL'); let isAllFabric = selFabric.includes('ALL');
+let records = db.inward.map((r, i) => ({...r, originalIdx: i})).filter(r => (!fDate || r.date === fDate) && (selOc.length === 0 || isAllOc || selOc.includes(r.oc)) && (selColor.length === 0 || isAllColor || selColor.includes(r.color)) && (selFabric.length === 0 || isAllFabric || selFabric.includes(r.fabric))).reverse();
+let totRolls = 0; let totWeight = 0;
+tbody.innerHTML = records.map(r => { totRolls += (r.roll || 0); totWeight += (r.weight || 0); return `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border font-bold">${r.oc}</td><td class="p-2 border">${r.supplier}</td><td class="p-2 border">${r.dc}</td><td class="p-2 border">${r.pdc}</td><td class="p-2 border">${r.grn}</td><td class="p-2 border">${r.lot}</td><td class="p-2 border">${r.rack}</td><td class="p-2 border">${r.dia}</td><td class="p-2 border">${r.color}</td><td class="p-2 border">${r.fabric}</td><td class="p-2 text-center border">${r.roll}</td><td class="p-2 text-right font-bold border">${r.weight.toFixed(3)}</td><td class="p-2 border text-center rbac-edit-col" style="display:${currentRole==='View'?'none':'table-cell'}"><button onclick="editInward(${r.originalIdx})" class="text-blue-600 font-bold hover:underline mr-2">✏️</button><button onclick="deleteInwardItem(${r.originalIdx})" class="text-red-600 font-bold hover:underline">🗑️</button></td></tr>`; }).join('');
+document.getElementById('in_tot_roll').innerText = totRolls; document.getElementById('in_tot_weight').innerText = totWeight.toFixed(3);
+}
+function deleteInwardItem(i) { if(confirm("Purge inward log line?")) { db.inward.splice(i, 1); saveDB('inward'); renderInwardPageTable(); } }
+
+function saveOutward(e) {
+e.preventDefault(); let idx = parseInt(document.getElementById('out_edit_idx').value);
+let item = { date: document.getElementById('out_date').value, oc: document.getElementById('out_oc').value.toUpperCase().trim(), dc: document.getElementById('out_dc').value.trim(), grn: document.getElementById('out_grn').value.trim(), out_dc: document.getElementById('out_out_dc').value.trim(), color: document.getElementById('out_color').value.toUpperCase().trim(), fabric: document.getElementById('out_fabric').value.toUpperCase().trim(), dia: document.getElementById('out_dia').value.trim(), roll: parseInt(document.getElementById('out_roll').value) || 0, weight: parseFloat(document.getElementById('out_weight').value) || 0, lot: document.getElementById('out_lot').value.trim(), location: document.getElementById('out_location').value.toUpperCase().trim(), purpose: document.getElementById('out_purpose').value.toUpperCase().trim(), remarks: document.getElementById('out_remarks').value.trim() };
+if(idx >= 0) { db.outward[idx] = item; document.getElementById('out_btn_save').innerText = "Save Outward Entry"; } else { db.outward.push(item); }
+saveDB('outward'); document.getElementById('outwardForm').reset(); document.getElementById('out_edit_idx').value = "-1"; renderOutwardPageTable();
+}
+function editOutward(i) { let r = db.outward[i]; document.getElementById('out_edit_idx').value = i; document.getElementById('out_date').value = r.date; document.getElementById('out_oc').value = r.oc; document.getElementById('out_dc').value = r.dc; document.getElementById('out_grn').value = r.grn; document.getElementById('out_out_dc').value = r.out_dc; document.getElementById('out_color').value = r.color; document.getElementById('out_fabric').value = r.fabric; document.getElementById('out_dia').value = r.dia; document.getElementById('out_roll').value = r.roll; document.getElementById('out_weight').value = r.weight; document.getElementById('out_lot').value = r.lot; document.getElementById('out_location').value = r.location; document.getElementById('out_purpose').value = r.purpose; document.getElementById('out_remarks').value = r.remarks; document.getElementById('out_btn_save').innerText = "Update Outward Entry"; window.scrollTo(0,0); }
+function renderOutwardPageTable() {
+let tbody = document.getElementById('page_outward_tbody'); if(!tbody || !db.outward) return;
+let fDate = document.getElementById('page_out_filter_date').value; let selOc = activeFilters.outward.OC_NO; let selColor = activeFilters.outward.COLOR; let selFabric = activeFilters.outward.FABRIC;
+if(!fDate && selOc.length === 0 && selColor.length === 0 && selFabric.length === 0) { tbody.innerHTML = `<tr><td colspan="14" class="text-center p-8 text-gray-500 font-bold tracking-widest uppercase">Please select a filter or click 'ALL' to view logs.</td></tr>`; document.getElementById('out_tot_roll').innerText = '0'; document.getElementById('out_tot_weight').innerText = '0.000'; return; }
+let isAllOc = selOc.includes('ALL'); let isAllColor = selColor.includes('ALL'); let isAllFabric = selFabric.includes('ALL');
+let records = db.outward.map((r, i) => ({...r, originalIdx: i})).filter(r => (!fDate || r.date === fDate) && (selOc.length === 0 || isAllOc || selOc.includes(r.oc)) && (selColor.length === 0 || isAllColor || selColor.includes(r.color)) && (selFabric.length === 0 || isAllFabric || selFabric.includes(r.fabric))).reverse();
+let totRolls = 0; let totWeight = 0;
+tbody.innerHTML = records.map(r => { totRolls += (r.roll || 0); totWeight += (r.weight || 0); return `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border font-bold">${r.oc}</td><td class="p-2 border">${r.dc}</td><td class="p-2 border font-medium">${r.out_dc}</td><td class="p-2 border">${r.grn}</td><td class="p-2 border">${r.lot}</td><td class="p-2 border">${r.dia}</td><td class="p-2 border text-[11px]">${r.color}</td><td class="p-2 border text-[11px]">${r.fabric}</td><td class="p-2 border font-bold">${r.location}</td><td class="p-2 border text-xs">${r.purpose}</td><td class="p-2 text-center border">${r.roll}</td><td class="p-2 text-right font-bold border">${r.weight.toFixed(3)}</td><td class="p-2 text-center border rbac-edit-col" style="display:${currentRole==='View'?'none':'table-cell'}"><button onclick="editOutward(${r.originalIdx})" class="text-blue-600 font-bold hover:underline mr-2">✏️</button><button onclick="deleteOutwardItem(${r.originalIdx})" class="text-red-500 font-bold hover:underline">🗑️</button></td></tr>`; }).join('');
+document.getElementById('out_tot_roll').innerText = totRolls; document.getElementById('out_tot_weight').innerText = totWeight.toFixed(3);
+}
+function deleteOutwardItem(i) { if(confirm("Purge outward record trace line?")) { db.outward.splice(i, 1); saveDB('outward'); renderOutwardPageTable(); } }
+
+function runReconciliation() {
+let selOc = activeFilters.dashboard.OC_NO; let selFabric = activeFilters.dashboard.FABRIC; let selColor = activeFilters.dashboard.COLOR; let selDia = activeFilters.dashboard.DIA; let selLoc = activeFilters.dashboard.DELIVERY_LOCATION;
+if(selOc.length === 0 && selFabric.length === 0 && selColor.length === 0 && selDia.length === 0 && selLoc.length === 0) { alert("Please select at least one filter (or 'ALL') before generating the dashboard."); return; }
+let isAllOc = selOc.includes('ALL'); let isAllFabric = selFabric.includes('ALL'); let isAllColor = selColor.includes('ALL'); let isAllDia = selDia.includes('ALL'); let isAllLoc = selLoc.includes('ALL');
+let txtOc = selOc.length > 0 && !isAllOc ? selOc.join(', ') : 'ALL LOOKUPS'; document.getElementById('closing_oc_badge').innerText = `OC: ${txtOc}`;
+let matchedReq = (db.requirement||[]).filter(r => (selOc.length === 0 || isAllOc || selOc.includes(r.oc)) && (selFabric.length === 0 || isAllFabric || selFabric.includes(r.fabric)) && (selColor.length === 0 || isAllColor || selColor.includes(r.color)));
+let matchedIn = (db.inward||[]).filter(r => (selOc.length === 0 || isAllOc || selOc.includes(r.oc)) && (selFabric.length === 0 || isAllFabric || selFabric.includes(r.fabric)) && (selColor.length === 0 || isAllColor || selColor.includes(r.color)) && (selDia.length === 0 || isAllDia || selDia.includes(r.dia)));
+let matchedOut = (db.outward||[]).filter(r => (selOc.length === 0 || isAllOc || selOc.includes(r.oc)) && (selFabric.length === 0 || isAllFabric || selFabric.includes(r.fabric)) && (selColor.length === 0 || isAllColor || selColor.includes(r.color)) && (selDia.length === 0 || isAllDia || selDia.includes(r.dia)) && (selLoc.length === 0 || isAllLoc || selLoc.includes(r.location)));
+let sumReq = matchedReq.reduce((s, r) => s + r.weight, 0); let sumIn = matchedIn.reduce((s, r) => s + r.weight, 0); let sumOut = matchedOut.reduce((s, r) => s + r.weight, 0); let balanceStock = sumIn - sumOut;
+document.getElementById('sum_requirement').innerText = sumReq.toFixed(3); document.getElementById('sum_inward').innerText = sumIn.toFixed(3); document.getElementById('sum_outward').innerText = sumOut.toFixed(3); document.getElementById('sum_balance').innerText = balanceStock.toFixed(3);
+document.getElementById('report_inward_tbody').innerHTML = matchedIn.map(r => `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border font-bold">${r.oc}</td><td class="p-2 border">${r.supplier}</td><td class="p-2 border">${r.dc}</td><td class="p-2 border">${r.pdc}</td><td class="p-2 border">${r.grn}</td><td class="p-2 border">${r.lot}</td><td class="p-2 border">${r.rack}</td><td class="p-2 border">${r.dia}</td><td class="p-2 border">${r.color}</td><td class="p-2 border">${r.fabric}</td><td class="p-2 border text-center">${r.roll}</td><td class="p-2 border text-right font-black">${r.weight.toFixed(3)}</td></tr>`).join('');
+document.getElementById('report_outward_tbody').innerHTML = matchedOut.map(r => `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border font-bold">${r.oc}</td><td class="p-2 border">${r.dc}</td><td class="p-2 border">${r.out_dc}</td><td class="p-2 border">${r.grn}</td><td class="p-2 border">${r.lot}</td><td class="p-2 border">${r.dia}</td><td class="p-2 border">${r.color}</td><td class="p-2 border">${r.fabric}</td><td class="p-2 border font-bold">${r.location}</td><td class="p-2 border">${r.purpose}</td><td class="p-2 border text-center">${r.roll}</td><td class="p-2 border text-right font-black">${r.weight.toFixed(3)}</td></tr>`).join('');
+document.getElementById('reconciliation-card').classList.remove('hidden');
+let chartType = document.getElementById('chart_type_selector').value; initChartsEngine(sumReq, sumIn, sumOut, balanceStock, chartType);
+}
+
+function initChartsEngine(req, inward, outward, bal, cType = 'bar') {
+if (myBarChart) myBarChart.destroy(); if (myDoughnutChart) myDoughnutChart.destroy();
+const ctxBar = document.getElementById('barChart').getContext('2d');
+let sharedOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' }, datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: Math.round, anchor: 'end', align: 'start', offset: -20 } } };
+myBarChart = new Chart(ctxBar, { type: (cType === 'doughnut' || cType === 'pie') ? 'bar' : cType, data: { labels: ['Target Req', 'Inward', 'Outward'], datasets: [{ label: 'Weight (KGS)', data: [req, inward, outward], backgroundColor: ['#db2777', '#2563eb', '#059669'], borderRadius: cType === 'bar' ? 6 : 0, borderWidth: cType === 'line' ? 3 : 1 }] }, options: sharedOptions });
+const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+myDoughnutChart = new Chart(ctxDoughnut, { type: cType === 'line' ? 'doughnut' : cType, data: { labels: ['Dispatched', 'Available'], datasets: [{ data: [outward, bal < 0 ? 0 : bal], backgroundColor: ['#e11d48', '#16a34a'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } }, datalabels: { color: '#fff', font: { weight: 'bold' }, formatter: (value) => value.toFixed(1) } } } });
+}
+
+function populateFCROCDropdown() { let sel = document.getElementById('fcr_oc_filter'); if(!sel) return; sel.innerHTML = '<option value="">-- SELECT OC NO --</option>'; let ocs = db.master['OC_NO'] || []; ocs.forEach(oc => sel.innerHTML += `<option value="${oc}">${oc}</option>`); }
+
+function generateFCRReport() {
+let oc = document.getElementById('fcr_oc_filter').value; if(!oc) { alert("Please select an OC Number to generate the report."); return; }
+document.getElementById('fcr_display_oc').innerText = oc; let groupMap = {};
+let existingRecord = (db.fcr || []).find(x => x.oc === oc);
+if (existingRecord) {
+fcrCurrentData = existingRecord.data;
+if(existingRecord.status === 'Closed') { document.getElementById('fcr_status_badge').innerText = '🔒 CLOSED'; document.getElementById('fcr_status_badge').classList.replace('bg-gray-200', 'bg-red-200'); document.getElementById('fcr_status_badge').classList.replace('text-gray-800', 'text-red-900'); document.getElementById('fcr_btn_close').classList.add('opacity-50', 'pointer-events-none');
+} else { document.getElementById('fcr_status_badge').innerText = '✏️ DRAFT'; document.getElementById('fcr_status_badge').classList.replace('bg-red-200', 'bg-gray-200'); document.getElementById('fcr_status_badge').classList.replace('text-red-900', 'text-gray-800'); document.getElementById('fcr_btn_close').classList.remove('opacity-50', 'pointer-events-none'); }
+} else {
+document.getElementById('fcr_status_badge').innerText = '🆕 NEW'; document.getElementById('fcr_status_badge').classList.replace('bg-red-200', 'bg-gray-200'); document.getElementById('fcr_status_badge').classList.replace('text-red-900', 'text-gray-800'); document.getElementById('fcr_btn_close').classList.remove('opacity-50', 'pointer-events-none');
+(db.requirement || []).filter(r => r.oc === oc).forEach(r => { let key = `${r.fabric}__${r.color}`; if(!groupMap[key]) groupMap[key] = { fabric: r.fabric, color: r.color, po: 0, grn: 0, cut: 0, fold: 0, samp: 0, rep: 0, ret: 0 }; groupMap[key].po += r.weight; });
+(db.inward || []).filter(r => r.oc === oc).forEach(r => { let key = `${r.fabric}__${r.color}`; if(!groupMap[key]) groupMap[key] = { fabric: r.fabric, color: r.color, po: 0, grn: 0, cut: 0, fold: 0, samp: 0, rep: 0, ret: 0 }; groupMap[key].grn += r.weight; });
+(db.outward || []).filter(r => r.oc === oc).forEach(r => { let key = `${r.fabric}__${r.color}`; if(!groupMap[key]) groupMap[key] = { fabric: r.fabric, color: r.color, po: 0, grn: 0, cut: 0, fold: 0, samp: 0, rep: 0, ret: 0 }; let p = r.purpose.toUpperCase(); if(p.includes('CUTTING') && !p.includes('RETURN')) groupMap[key].cut += r.weight; else if(p.includes('FOLDING')) groupMap[key].fold += r.weight; else if(p.includes('SAMPLE')) groupMap[key].samp += r.weight; else if(p.includes('REPROCESS')) groupMap[key].rep += r.weight; else if(p.includes('RETURN')) groupMap[key].ret += r.weight; else groupMap[key].cut += r.weight; });
+fcrCurrentData = Object.values(groupMap);
+}
+renderFCRTable();
+let matchedReq = (db.requirement||[]).filter(r => r.oc === oc); document.getElementById('fcr_req_tbody').innerHTML = matchedReq.map(r => `<tr><td class="p-2 border font-bold">${r.oc}</td><td class="p-2 border">${r.fabric}</td><td class="p-2 border">${r.color}</td><td class="p-2 border">${r.component}</td><td class="p-2 border">${r.gsm || ''}</td><td class="p-2 border">${r.dia || ''}</td><td class="p-2 border text-right font-bold">${r.weight.toFixed(3)} KGS</td></tr>`).join('');
+let matchedIn = (db.inward||[]).filter(r => r.oc === oc); document.getElementById('fcr_inward_tbody').innerHTML = matchedIn.map(r => `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border font-bold">${r.oc}</td><td class="p-2 border">${r.supplier}</td><td class="p-2 border">${r.dc}</td><td class="p-2 border">${r.pdc}</td><td class="p-2 border">${r.grn}</td><td class="p-2 border">${r.lot}</td><td class="p-2 border">${r.rack}</td><td class="p-2 border">${r.dia}</td><td class="p-2 border">${r.color}</td><td class="p-2 border">${r.fabric}</td><td class="p-2 border text-center">${r.roll}</td><td class="p-2 text-right border font-bold">${r.weight.toFixed(3)}</td></tr>`).join('');
+let matchedOut = (db.outward||[]).filter(r => r.oc === oc); document.getElementById('fcr_outward_tbody').innerHTML = matchedOut.map(r => `<tr><td class="p-2 border">${r.date}</td><td class="p-2 border font-bold">${r.oc}</td><td class="p-2 border">${r.dc}</td><td class="p-2 border">${r.out_dc}</td><td class="p-2 border">${r.grn}</td><td class="p-2 border">${r.lot}</td><td class="p-2 border">${r.dia}</td><td class="p-2 border">${r.color}</td><td class="p-2 border">${r.fabric}</td><td class="p-2 border font-bold">${r.location}</td><td class="p-2 border">${r.purpose}</td><td class="p-2 text-center border">${r.roll}</td><td class="p-2 text-right border font-bold">${r.weight.toFixed(3)}</td></tr>`).join('');
+document.getElementById('fcr_full_report_wrapper').classList.remove('hidden'); document.getElementById('fcr_print_wrapper').classList.remove('hidden');
+}
+
+function renderFCRTable() {
+let tbody = document.getElementById('fcr_tbody'); let t_po=0, t_grn=0, t_bal=0, t_cut=0, t_fold=0, t_samp=0, t_rep=0, t_ret=0, t_hand=0;
+tbody.innerHTML = fcrCurrentData.map((d, i) => {
+let bal = d.po - d.grn; let hand = d.grn - (d.cut + d.fold + d.samp + d.rep) + d.ret;
+t_po += d.po; t_grn += d.grn; t_bal += bal; t_cut += d.cut; t_fold += d.fold; t_samp += d.samp; t_rep += d.rep; t_ret += d.ret; t_hand += hand;
+return `<tr><td class="p-2 bg-gray-50 border border-gray-400 text-black">${i+1}</td><td class="p-2 text-left font-bold border border-gray-400 text-black" contenteditable="true">${d.fabric}</td><td class="p-2 text-left text-xs border border-gray-400 text-black" contenteditable="true">${d.color}</td><td class="p-2 font-bold editable-cell bg-yellow-50 text-red-700 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'po', this.innerText)">${d.po.toFixed(3)}</td><td class="p-2 font-bold editable-cell bg-yellow-50 text-black border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'grn', this.innerText)">${d.grn.toFixed(3)}</td><td class="p-2 text-red-600 font-bold bg-red-50 border border-gray-400">${bal.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'cut', this.innerText)">${d.cut.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'fold', this.innerText)">${d.fold.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'samp', this.innerText)">${d.samp.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'rep', this.innerText)">${d.rep.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'ret', this.innerText)">${d.ret.toFixed(3)}</td><td class="p-2 text-green-700 font-black bg-green-50 border border-gray-400">${hand.toFixed(3)}</td></tr>`;
+}).join('');
+document.getElementById('fcr_t_po').innerText = t_po.toFixed(3); document.getElementById('fcr_t_grn').innerText = t_grn.toFixed(3); document.getElementById('fcr_t_bal').innerText = t_bal.toFixed(3); document.getElementById('fcr_t_cut').innerText = t_cut.toFixed(3); document.getElementById('fcr_t_fold').innerText = t_fold.toFixed(3); document.getElementById('fcr_t_samp').innerText = t_samp.toFixed(3); document.getElementById('fcr_t_rep').innerText = t_rep.toFixed(3); document.getElementById('fcr_t_ret').innerText = t_ret.toFixed(3); document.getElementById('fcr_t_hand').innerText = t_hand.toFixed(3);
+}
+
+function updateFCRCell(idx, field, val) { let num = parseFloat(val) || 0; fcrCurrentData[idx][field] = num; renderFCRTable(); }
+function saveFCRDraft() { executeFCRSave('Draft'); }
+function saveOCClosing() { if(confirm("Are you sure you want to permanently Close this OC?")) { executeFCRSave('Closed'); } }
+function executeFCRSave(statusMode) {
+let oc = document.getElementById('fcr_display_oc').innerText; if(!oc || fcrCurrentData.length === 0) return;
+if(!db.fcr) db.fcr = []; let existingIdx = db.fcr.findIndex(x => x.oc === oc);
+let record = { oc: oc, status: statusMode, date: new Date().toLocaleDateString(), data: fcrCurrentData, po_total: document.getElementById('fcr_t_po').innerText, grn_total: document.getElementById('fcr_t_grn').innerText, hand_stock: document.getElementById('fcr_t_hand').innerText };
+if(existingIdx >= 0) db.fcr[existingIdx] = record; else db.fcr.push(record);
+saveDB('fcr'); alert(`✅ FCR for OC ${oc} saved successfully as [${statusMode}]!`); renderFcrHistory(); generateFCRReport();
+}
+
+function renderFcrHistory() { let tbody = document.getElementById('fcr_history_tbody'); if(!tbody || !db.fcr) return; tbody.innerHTML = db.fcr.map((r, i) => `<tr><td class="p-2 border font-black text-teal-800">${r.oc}</td><td class="p-2 border font-bold ${r.status==='Closed'?'text-red-600':'text-yellow-600'}">${r.status || 'Draft'}</td><td class="p-2 border text-black">${r.date}</td><td class="p-2 border text-black">${r.po_total}</td><td class="p-2 border text-black">${r.grn_total}</td><td class="p-2 border font-bold text-green-700">${r.hand_stock}</td><td class="p-2 text-center border"><button onclick="loadFCRRecord(${i})" class="text-blue-600 font-bold hover:underline text-xs mr-3">View</button><button onclick="deleteFCRRecord(${i})" class="text-red-500 font-bold hover:underline text-xs">Del</button></td></tr>`).join(''); }
+function loadFCRRecord(i) { let record = db.fcr[i]; document.getElementById('fcr_oc_filter').value = record.oc; generateFCRReport(); window.scrollTo(0,0); }
+function deleteFCRRecord(i) { if(confirm("Delete this FCR record permanently?")) { db.fcr.splice(i, 1); saveDB('fcr'); renderFcrHistory(); } }
+
+function addMasterItem() { let cat = document.getElementById('master_category').value; let val = document.getElementById('master_value').value.toUpperCase().trim(); if(!val) return; if(!db.master[cat]) db.master[cat] = []; if(!db.master[cat].includes(val)) { db.master[cat].push(val); saveDB('master'); renderMasterDisplayLists(); document.getElementById('master_value').value=""; alert("Added successfully!"); initAllMultiSelects(); populateFCROCDropdown(); } }
+function renderMasterDisplayLists() { let container = document.getElementById('master_display'); if(!container) return; let html = ""; for(let cat in db.master) { html += `<div class="border-b border-gray-300/50 pb-2 mb-2"><span class="font-bold text-xs uppercase block mb-1 opacity-70">${cat}</span><div class="flex flex-wrap gap-1.5">` + db.master[cat].map(item => `<span class="bg-gray-100 px-2.5 py-1 rounded-md border text-[11px] font-medium flex items-center gap-1 text-black">${item} <button onclick="editMasterKey('${cat}','${item}')" class="text-blue-500 font-bold hover:text-blue-700 rbac-edit-area ml-1" title="Edit" style="display:${currentRole==='View'?'none':'block'}">✏️</button><button onclick="purgeMasterKey('${cat}','${item}')" class="text-red-500 font-bold hover:text-red-700 rbac-edit-area ml-1" title="Delete" style="display:${currentRole==='View'?'none':'block'}">&times;</button></span>`).join('') + `</div></div>`; } container.innerHTML = html; }
+function toggleMasterView() { let target = document.getElementById('master_wrapper'); let btn = document.getElementById('btn-toggle-master'); if(target.style.display === 'none') { target.style.display = 'block'; btn.innerText = "Hide Active Lists"; } else { target.style.display = 'none'; btn.innerText = "Show Active Lists"; } }
+function editMasterKey(cat, oldItem) { let newItem = prompt(`Enter new value for ${oldItem}:`, oldItem); if(newItem && newItem.trim() !== "" && newItem.trim().toUpperCase() !== oldItem) { newItem = newItem.trim().toUpperCase(); let idx = db.master[cat].indexOf(oldItem); if(idx > -1) db.master[cat][idx] = newItem; let updateData = (arr, field) => { if(arr) arr.forEach(r => { if(r[field] === oldItem) r[field] = newItem; }); }; if(cat === 'OC_NO') { updateData(db.requirement, 'oc'); updateData(db.inward, 'oc'); updateData(db.outward, 'oc'); updateData(db.fcr, 'oc'); } if(cat === 'COLOR') { updateData(db.requirement, 'color'); updateData(db.inward, 'color'); updateData(db.outward, 'color'); } if(cat === 'FABRIC') { updateData(db.requirement, 'fabric'); updateData(db.inward, 'fabric'); updateData(db.outward, 'fabric'); } if(cat === 'DIA') { updateData(db.requirement, 'dia'); updateData(db.inward, 'dia'); updateData(db.outward, 'dia'); } if(cat === 'GSM') { updateData(db.requirement, 'gsm'); } if(cat === 'PARTS') { updateData(db.requirement, 'component'); } if(cat === 'SUPPLIER') { updateData(db.inward, 'supplier'); } if(cat === 'DELIVERY_LOCATION') { updateData(db.outward, 'location'); } if(cat === 'PURPOSE') { updateData(db.outward, 'purpose'); } saveDB('master'); saveDB('requirement'); saveDB('inward'); saveDB('outward'); saveDB('fcr'); renderMasterDisplayLists(); initAllMultiSelects(); populateFCROCDropdown(); if(document.getElementById('page-requirement').style.display === 'block') renderRequirementTable(); if(document.getElementById('page-inward').style.display === 'block') renderInwardPageTable(); if(document.getElementById('page-outward').style.display === 'block') renderOutwardPageTable(); } }
+function purgeMasterKey(cat, item) { if(confirm(`Purge lookup option "${item}"? ${cat === 'OC_NO' ? '\n⚠️ WARNING: This will also delete ALL related Requirement, Inward, Outward and FCR data!' : ''}`)) { db.master[cat] = db.master[cat].filter(x => x !== item); if(cat === 'OC_NO') { if(db.requirement) db.requirement = db.requirement.filter(r => r.oc !== item); if(db.inward) db.inward = db.inward.filter(r => r.oc !== item); if(db.outward) db.outward = db.outward.filter(r => r.oc !== item); if(db.fcr) db.fcr = db.fcr.filter(r => r.oc !== item); saveDB('requirement'); saveDB('inward'); saveDB('outward'); saveDB('fcr'); } saveDB('master'); renderMasterDisplayLists(); initAllMultiSelects(); populateFCROCDropdown(); if(document.getElementById('page-requirement').style.display === 'block') renderRequirementTable(); if(document.getElementById('page-inward').style.display === 'block') renderInwardPageTable(); if(document.getElementById('page-outward').style.display === 'block') renderOutwardPageTable(); } }
+
+async function exportToExcelPremium(mode, context = 'inward') {
+const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet('GWC Export Data');
+if(mode === 'fcr') {
+let oc = document.getElementById('fcr_display_oc').innerText;
+sheet.getColumn(1).width = 8; sheet.getColumn(2).width = 25; sheet.getColumn(3).width = 20; sheet.getColumn(4).width = 15; sheet.getColumn(5).width = 15; sheet.getColumn(6).width = 15; sheet.getColumn(7).width = 12; sheet.getColumn(8).width = 12; sheet.getColumn(9).width = 12; sheet.getColumn(10).width = 15; sheet.getColumn(11).width = 15; sheet.getColumn(12).width = 15; sheet.getColumn(13).width = 15;
+const addTitle = (title) => { let r = sheet.addRow([title]); r.font = { bold: true, size: 14 }; sheet.mergeCells(r.number, 1, r.number, 6); };
+const addGap = () => { sheet.addRow([]); };
+const styleHeader = (rowObj, bgColor, color='FFFFFFFF') => { rowObj.eachCell((cell) => { cell.font = { bold: true, color: { argb: color } }; cell.alignment = { vertical: 'middle', horizontal: 'center' }; cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} }; if(bgColor) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } }; }); };
+
+addTitle('REQUIREMENT - OC: ' + oc); let reqHead = sheet.addRow(['OC NO', 'Fabric Type', 'Colour', 'Parts', 'GSM', 'DIA', 'Target Req (KGS)']); styleHeader(reqHead, 'FF1E1B4B');
+let matchedReq = (db.requirement||[]).filter(r => r.oc === oc); matchedReq.forEach(r => sheet.addRow([r.oc, r.fabric, r.color, r.component, r.gsm, r.dia, r.weight])); addGap();
+
+addTitle('INWARD REPORT'); let inHead = sheet.addRow(['R.DATE', 'OC NO', 'SUPPLIER', 'DC', 'PARTY DC NO', 'GRN', 'LOT', 'RACK NO', 'DIA', 'COLOUR', 'FABRIC', 'ROLL', 'RECD WEIGHT']); styleHeader(inHead, 'FF1E1B4B');
+let matchedIn = (db.inward||[]).filter(r => r.oc === oc); matchedIn.forEach(r => sheet.addRow([r.date, r.oc, r.supplier, r.dc, r.pdc, r.grn, r.lot, r.rack, r.dia, r.color, r.fabric, r.roll, r.weight])); addGap();
+
+addTitle('OUTWARD REPORT'); let outHead = sheet.addRow(['DATE', 'OC NO', 'IN DC', 'OUT DC', 'GRN', 'LOT', 'DIA', 'COLOUR', 'FABRIC TYPE', 'LOCATION', 'PURPOSE', 'ROLLS', 'WEIGHT']); styleHeader(outHead, 'FF1E1B4B');
+let matchedOut = (db.outward||[]).filter(r => r.oc === oc); matchedOut.forEach(r => sheet.addRow([r.date, r.oc, r.dc, r.out_dc, r.grn, r.lot, r.dia, r.color, r.fabric, r.location, r.purpose, r.roll, r.weight])); addGap();
+
+addTitle('FABRIC CLOSING REPORT'); let fcrHead = sheet.addRow(['SL NO', 'FABRIC NAME', 'COLOR', 'PO QTY', 'OC GRN QTY', 'GRN BAL', 'CUTTING ISSUE', 'FOLDING', 'SAMPLE', 'REPROCESS', 'CUT RETURN', 'HAND STOCK']); styleHeader(fcrHead, 'FF1E1B4B');
+fcrCurrentData.forEach((d, i) => { let bal = d.po-d.grn; let hand = d.grn - (d.cut+d.fold+d.samp+d.rep) + d.ret; let r = sheet.addRow([i+1, d.fabric, d.color, d.po, d.grn, bal, d.cut, d.fold, d.samp, d.rep, d.ret, hand]); r.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF9C4' } }; r.getCell(6).font = { bold: true, color: { argb: 'FFC0392B' } }; r.getCell(12).font = { bold: true, color: { argb: 'FF0E6655' } }; });
+} else if (context === 'requirement') {
+sheet.columns = [ { header: 'OC NUMBER', key: 'oc', width: 14 }, { header: 'FABRIC TYPE', key: 'fabric', width: 22 }, { header: 'COLOUR', key: 'color', width: 22 }, { header: 'PARTS', key: 'component', width: 15 }, { header: 'GSM', key: 'gsm', width: 10 }, { header: 'DIA', key: 'dia', width: 10 }, { header: 'WEIGHT (KGS)', key: 'weight', width: 16 } ];
+let selOc = activeFilters.requirement.OC_NO; let selColor = activeFilters.requirement.COLOR; let selFabric = activeFilters.requirement.FABRIC;
+let records = (db.requirement||[]).filter(r => (selOc.length === 0 || selOc.includes('ALL') || selOc.includes(r.oc)) && (selColor.length === 0 || selColor.includes('ALL') || selColor.includes(r.color)) && (selFabric.length === 0 || selFabric.includes('ALL') || selFabric.includes(r.fabric)));
+records.forEach(r => { sheet.addRow(r); }); sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } }; sheet.getRow(1).background = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E1B4B' } };
+} else {
+sheet.columns = [ { header: 'DATE', key: 'date', width: 14 }, { header: 'OC NUMBER', key: 'oc', width: 14 }, { header: 'LOOKUP PARTY', key: 'supplier', width: 18 }, { header: 'DOC CH NO', key: 'dc', width: 12 }, { header: 'PDC NO', key: 'pdc', width: 12 }, { header: 'GRN ID', key: 'grn', width: 12 }, { header: 'LOT', key: 'lot', width: 10 }, { header: 'RACK ID', key: 'rack', width: 10 }, { header: 'DIA', key: 'dia', width: 8 }, { header: 'FABRIC TYPE LOOKUP', key: 'fabric', width: 22 }, { header: 'COLOUR TONE', key: 'color', width: 22 }, { header: 'ROLLS', key: 'roll', width: 10 }, { header: 'WEIGHT (KGS)', key: 'weight', width: 16 } ];
+let records = [];
+if(context === 'inward') { let fDate = document.getElementById('page_in_filter_date') ? document.getElementById('page_in_filter_date').value : ''; let selOc = activeFilters.inward.OC_NO; let selColor = activeFilters.inward.COLOR; let selFabric = activeFilters.inward.FABRIC; records = (db.inward||[]).filter(r => (!fDate || r.date === fDate) && (selOc.length === 0 || selOc.includes('ALL') || selOc.includes(r.oc)) && (selColor.length === 0 || selColor.includes('ALL') || selColor.includes(r.color)) && (selFabric.length === 0 || selFabric.includes('ALL') || selFabric.includes(r.fabric))); }
+else if (context === 'outward') { let fDate = document.getElementById('page_out_filter_date') ? document.getElementById('page_out_filter_date').value : ''; let selOc = activeFilters.outward.OC_NO; let selColor = activeFilters.outward.COLOR; let selFabric = activeFilters.outward.FABRIC; records = (db.outward||[]).filter(r => (!fDate || r.date === fDate) && (selOc.length === 0 || selOc.includes('ALL') || selOc.includes(r.oc)) && (selColor.length === 0 || selColor.includes('ALL') || selColor.includes(r.color)) && (selFabric.length === 0 || selFabric.includes('ALL') || selFabric.includes(r.fabric))); }
+else if (context === 'dashboard') { let selOc = activeFilters.dashboard.OC_NO; records = db.inward || []; if (mode === 'filtered' && selOc.length > 0 && !selOc.includes('ALL')) records = records.filter(r => selOc.includes(r.oc)); }
+if(mode === 'overall' && context !== 'dashboard') records = context === 'inward' ? (db.inward||[]) : (db.outward||[]);
+records.forEach(r => { sheet.addRow(r); }); sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } }; sheet.getRow(1).background = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E1B4B' } };
+}
+const buffer = await workbook.xlsx.writeBuffer(); const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `GWC_Export_${mode}.xlsx`; link.click();
+}
+
+function exportTableData(type, format) { let tableId = type === 'inward' ? 'inward_table_wrap' : (type === 'outward' ? 'outward_table_wrap' : 'req_table_wrap'); if(format === 'image') exportToImage(tableId); else exportToExcelPremium('filtered', type); }
+function exportToImage(id) { html2canvas(document.getElementById(id)).then(canvas => { let link = document.createElement('a'); link.download = 'GWC-Export.png'; link.href = canvas.toDataURL(); link.click(); }); }
+function exportAdvancedPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF('landscape'); doc.setFontSize(16); doc.text("GWC ERP - Advanced PDF Summary Report", 14, 15); doc.autoTable({ html: '#pdf_inward_table', startY: 25, theme: 'grid', styles: { fontSize: 7 } }); doc.addPage(); doc.text("GWC ERP - Outward Logs", 14, 15); doc.autoTable({ html: '#pdf_outward_table', startY: 25, theme: 'grid', styles: { fontSize: 7 } }); doc.save("GWC_Advanced_Report.pdf"); }
+
+function exportFCR_Comprehensive(format) {
+let oc = document.getElementById('fcr_display_oc').innerText; if(!oc) { alert("Please generate a report first."); return; }
+if(format === 'image') { html2canvas(document.getElementById('fcr_full_report_wrapper')).then(canvas => { let link = document.createElement('a'); link.download = `GWC_FCR_Full_${oc}.png`; link.href = canvas.toDataURL(); link.click(); }); }
+else if(format === 'word') { let preHtml = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML To Doc</title></head><body>"; let postHtml = "</body></html>"; let html = preHtml + document.getElementById('fcr_full_report_wrapper').innerHTML + postHtml; let blob = new Blob(['\ufeff', html], { type: 'application/msword' }); let url = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(html); let link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `GWC_FCR_Full_${oc}.doc`; link.click(); }
+else if(format === 'excel') { exportToExcelPremium('fcr', 'fcr'); }
+else if(format === 'pdf') { const { jsPDF } = window.jspdf; const doc = new jsPDF('landscape'); doc.setFontSize(14); doc.text(`Requirement Report - OC: ${oc}`, 14, 15); doc.autoTable({ html: '#fcr_req_table', startY: 20, theme: 'grid', styles: { fontSize: 7 }}); doc.text(`Inward Report - OC: ${oc}`, 14, doc.lastAutoTable.finalY + 15); doc.autoTable({ html: '#fcr_inward_table', startY: doc.lastAutoTable.finalY + 20, theme: 'grid', styles: { fontSize: 7 }}); doc.addPage(); doc.text(`Outward Report - OC: ${oc}`, 14, 15); doc.autoTable({ html: '#fcr_outward_table', startY: 20, theme: 'grid', styles: { fontSize: 7 }}); doc.text(`Fabric Closing Report - OC: ${oc}`, 14, doc.lastAutoTable.finalY + 15); doc.autoTable({ html: '#fcr_table_export', startY: doc.lastAutoTable.finalY + 20, theme: 'grid', styles: { fontSize: 7, halign: 'center' }, headStyles: { fillColor: [50, 50, 50] } }); doc.save(`GWC_FCR_Comprehensive_${oc}.pdf`); }
+}
+</script>
+</body>
+</html>
