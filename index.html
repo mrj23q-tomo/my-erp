@@ -545,7 +545,7 @@ box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 <div class="text-center md:text-left">
 <h3 class="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">CREATOR: VR</h3>
 <p class="text-[10px] md:text-xs font-bold text-indigo-300 uppercase tracking-widest mt-0.5">Lead Web Architecture & ERP Engineer</p>
-<div class="text-[10px] md:text-xs text-gray-300 space-y-1 mt-2 md:mt-3 font-medium"><p>📞 <b>Contact:</b> +91 6380704783</p><p>📧 <b>Email:</b> mrj23q@gmail.com</p></div>
+<div class="text-[10px] md:text-xs text-gray-300 space-y-1 mt-2 md:mt-3 font-medium"><b>Name:</b> M PRAKASH RAJA</p><p>📞 <b>Contact:</b> +91 6380704783</p><p>📧 <b>Email:</b> mrj23q@gmail.com</p></div>
 </div></div></div></div>
 
 <script>
@@ -676,10 +676,49 @@ function handleAuthAction() {
 }
 function logout() { location.reload(); }
 function renderAdminSessionLogs() { let tbody = document.getElementById('admin_users_tbody'); if(!tbody || !db.activeSessions) return; tbody.innerHTML = db.activeSessions.reverse().map(l => `<tr><td class="p-2 border">${l.username}</td><td class="p-2 border">${l.role}</td><td class="p-2 border">${l.time}</td></tr>`).join(''); }
-function renderAdminUserManagement() { let tbody = document.getElementById('users_tbody'); if(!tbody || currentRole !== 'Main' || !db.users) return; tbody.innerHTML = db.users.map((u, i) => `<tr><td class="p-2 font-bold border">${u.username}</td><td class="p-2 border"><input type="password" value="${u.password}" disabled class="bg-transparent text-gray-500" id="pw_${i}"><button onclick="togglePW('pw_${i}')" class="ml-2 text-[10px] bg-gray-200 px-2 py-1 rounded shadow">👁️ Show</button></td><td class="p-2 border"><select id="role_${i}" class="p-1 border rounded"><option value="View" ${u.role==='View'?'selected':''}>View</option><option value="Edit" ${u.role==='Edit'?'selected':''}>Edit</option><option value="Main" ${u.role==='Main'?'selected':''}>Main</option></select></td><td class="p-2 text-center border"><button onclick="updateUserRole(${i})" class="bg-blue-600 text-white px-3 py-1 rounded font-bold shadow text-xs">Approve</button></td></tr>`).join(''); }
-function togglePW(id) { let el = document.getElementById(id); el.type = el.type === "password" ? "text" : "password"; }
-function updateUserRole(i) { db.users[i].role = document.getElementById(`role_${i}`).value; saveDB('users'); alert("User Role Updated Successfully!"); applyRBAC(); }
+// புதிய பாதுகாப்பான யூசர் மேனேஜ்மென்ட் கோடிங்
+function renderAdminUserManagement() { 
+    let tbody = document.getElementById('users_tbody'); 
+    if(!tbody || currentRole !== 'Main') return; 
 
+    // Firebase-ல் இருந்து நேரடியாக யூசர்களை எடுப்பது
+    firestoreDB.collection("gwc_users_roles").get().then((querySnapshot) => {
+        let rows = "";
+        querySnapshot.forEach((doc) => {
+            let u = doc.data();
+            let uid = doc.id; // யூசரின் தனிப்பட்ட ID
+            
+            rows += `<tr>
+                <td class="p-2 font-bold border">${u.email}</td>
+                <td class="p-2 border text-center"><span class="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded font-bold">Hidden by Security</span></td>
+                <td class="p-2 border">
+                    <select id="role_${uid}" class="p-1 border rounded font-bold text-gray-700">
+                        <option value="View" ${u.role === 'View' ? 'selected' : ''}>View</option>
+                        <option value="Edit" ${u.role === 'Edit' ? 'selected' : ''}>Edit</option>
+                        <option value="Main" ${u.role === 'Main' ? 'selected' : ''}>Main</option>
+                    </select>
+                </td>
+                <td class="p-2 text-center border">
+                    <button onclick="updateUserRoleFirebase('${uid}')" class="bg-blue-600 hover:bg-blue-800 text-white px-3 py-1 rounded font-bold shadow text-xs transition">Approve</button>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = rows;
+    }).catch(err => console.log("Error fetching users: ", err));
+}
+function togglePW(id) { let el = document.getElementById(id); el.type = el.type === "password" ? "text" : "password"; }
+// Role-ஐ அப்டேட் செய்யும் புதிய Function
+function updateUserRoleFirebase(uid) { 
+    let newRole = document.getElementById(`role_${uid}`).value; 
+    
+    firestoreDB.collection("gwc_users_roles").doc(uid).update({
+        role: newRole
+    }).then(() => {
+        alert("✅ User Role Updated Successfully!"); 
+    }).catch((err) => {
+        alert("❌ Error: " + err.message);
+    });
+}
 function showMainMenuHub() { document.getElementById('main_menu_hub').style.display = 'block'; document.getElementById('content_pages_wrapper').classList.add('hidden'); document.getElementById('btn_home_menu').classList.add('hidden'); }
 
 function openAppPage(pageId) {
@@ -874,13 +913,30 @@ document.getElementById('fcr_full_report_wrapper').classList.remove('hidden'); d
 }
 
 function renderFCRTable() {
-let tbody = document.getElementById('fcr_tbody'); let t_po=0, t_grn=0, t_bal=0, t_cut=0, t_fold=0, t_samp=0, t_rep=0, t_ret=0, t_hand=0;
-tbody.innerHTML = fcrCurrentData.map((d, i) => {
-let bal = d.po - d.grn; let hand = d.grn - (d.cut + d.fold + d.samp + d.rep) + d.ret;
-t_po += d.po; t_grn += d.grn; t_bal += bal; t_cut += d.cut; t_fold += d.fold; t_samp += d.samp; t_rep += d.rep; t_ret += d.ret; t_hand += hand;
-return `<tr><td class="p-2 bg-gray-50 border border-gray-400 text-black">${i+1}</td><td class="p-2 text-left font-bold border border-gray-400 text-black" contenteditable="true">${d.fabric}</td><td class="p-2 text-left text-xs border border-gray-400 text-black" contenteditable="true">${d.color}</td><td class="p-2 font-bold editable-cell bg-yellow-50 text-red-700 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'po', this.innerText)">${d.po.toFixed(3)}</td><td class="p-2 font-bold editable-cell bg-yellow-50 text-black border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'grn', this.innerText)">${d.grn.toFixed(3)}</td><td class="p-2 text-red-600 font-bold bg-red-50 border border-gray-400">${bal.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'cut', this.innerText)">${d.cut.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'fold', this.innerText)">${d.fold.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'samp', this.innerText)">${d.samp.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'rep', this.innerText)">${d.rep.toFixed(3)}</td><td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="true" onblur="updateFCRCell(${i}, 'ret', this.innerText)">${d.ret.toFixed(3)}</td><td class="p-2 text-green-700 font-black bg-green-50 border border-gray-400">${hand.toFixed(3)}</td></tr>`;
-}).join('');
-document.getElementById('fcr_t_po').innerText = t_po.toFixed(3); document.getElementById('fcr_t_grn').innerText = t_grn.toFixed(3); document.getElementById('fcr_t_bal').innerText = t_bal.toFixed(3); document.getElementById('fcr_t_cut').innerText = t_cut.toFixed(3); document.getElementById('fcr_t_fold').innerText = t_fold.toFixed(3); document.getElementById('fcr_t_samp').innerText = t_samp.toFixed(3); document.getElementById('fcr_t_rep').innerText = t_rep.toFixed(3); document.getElementById('fcr_t_ret').innerText = t_ret.toFixed(3); document.getElementById('fcr_t_hand').innerText = t_hand.toFixed(3);
+    let editAccess = (currentRole === 'View') ? "false" : "true";
+    let tbody = document.getElementById('fcr_tbody'); let t_po=0, t_grn=0, t_bal=0, t_cut=0, t_fold=0, t_samp=0, t_rep=0, t_ret=0, t_hand=0;
+    
+    tbody.innerHTML = fcrCurrentData.map((d, i) => {
+        let bal = d.po - d.grn; let hand = d.grn - (d.cut + d.fold + d.samp + d.rep) + d.ret;
+        t_po += d.po; t_grn += d.grn; t_bal += bal; t_cut += d.cut; t_fold += d.fold; t_samp += d.samp; t_rep += d.rep; t_ret += d.ret; t_hand += hand;
+        
+        return `<tr>
+            <td class="p-2 bg-gray-50 border border-gray-400 text-black">${i+1}</td>
+            <td class="p-2 text-left font-bold border border-gray-400 text-black" contenteditable="${editAccess}">${d.fabric}</td>
+            <td class="p-2 text-left text-xs border border-gray-400 text-black" contenteditable="${editAccess}">${d.color}</td>
+            <td class="p-2 font-bold editable-cell bg-yellow-50 text-red-700 border border-gray-400" contenteditable="${editAccess}" onblur="updateFCRCell(${i}, 'po', this.innerText)">${d.po.toFixed(3)}</td>
+            <td class="p-2 font-bold editable-cell bg-yellow-50 text-black border border-gray-400" contenteditable="${editAccess}" onblur="updateFCRCell(${i}, 'grn', this.innerText)">${d.grn.toFixed(3)}</td>
+            <td class="p-2 text-red-600 font-bold bg-red-50 border border-gray-400">${bal.toFixed(3)}</td>
+            <td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="${editAccess}" onblur="updateFCRCell(${i}, 'cut', this.innerText)">${d.cut.toFixed(3)}</td>
+            <td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="${editAccess}" onblur="updateFCRCell(${i}, 'fold', this.innerText)">${d.fold.toFixed(3)}</td>
+            <td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="${editAccess}" onblur="updateFCRCell(${i}, 'samp', this.innerText)">${d.samp.toFixed(3)}</td>
+            <td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="${editAccess}" onblur="updateFCRCell(${i}, 'rep', this.innerText)">${d.rep.toFixed(3)}</td>
+            <td class="p-2 editable-cell bg-yellow-50 text-gray-500 border border-gray-400" contenteditable="${editAccess}" onblur="updateFCRCell(${i}, 'ret', this.innerText)">${d.ret.toFixed(3)}</td>
+            <td class="p-2 text-green-700 font-black bg-green-50 border border-gray-400">${hand.toFixed(3)}</td>
+        </tr>`;
+    }).join('');
+    
+    document.getElementById('fcr_t_po').innerText = t_po.toFixed(3); document.getElementById('fcr_t_grn').innerText = t_grn.toFixed(3); document.getElementById('fcr_t_bal').innerText = t_bal.toFixed(3); document.getElementById('fcr_t_cut').innerText = t_cut.toFixed(3); document.getElementById('fcr_t_fold').innerText = t_fold.toFixed(3); document.getElementById('fcr_t_samp').innerText = t_samp.toFixed(3); document.getElementById('fcr_t_rep').innerText = t_rep.toFixed(3); document.getElementById('fcr_t_ret').innerText = t_ret.toFixed(3); document.getElementById('fcr_t_hand').innerText = t_hand.toFixed(3);
 }
 
 function updateFCRCell(idx, field, val) { let num = parseFloat(val) || 0; fcrCurrentData[idx][field] = num; renderFCRTable(); }
