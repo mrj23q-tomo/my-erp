@@ -604,7 +604,25 @@ container.innerHTML = html;
 
 function loadSavedThemes() { renderHeaderThemeButtons(); let savedBgTheme = localStorage.getItem('gwc_bg_theme') || 'th3'; applyTheme(savedBgTheme); }
 loadDataFromFirebase(); window.addEventListener('DOMContentLoaded', () => { loadSavedThemes(); setTimeout(() => { document.getElementById('intro_screen').style.display = 'none'; document.getElementById('login_screen').classList.remove('hidden'); }, 1200); });
-function applyRBAC() { document.getElementById('role_badge').innerText = currentRole; document.getElementById('current_user_display').innerText = currentUser; let editAreas = document.querySelectorAll('.rbac-edit-area'); editAreas.forEach(el => el.style.display = currentRole === 'View' ? 'none' : 'block'); let editCols = document.querySelectorAll('.rbac-edit-col'); editCols.forEach(el => el.style.display = currentRole === 'View' ? 'none' : 'table-cell'); document.getElementById('admin_user_management').style.display = currentRole === 'Main' ? 'block' : 'none'; document.getElementById('btn_admin_logs').style.display = currentRole === 'Main' ? 'flex' : 'none'; document.getElementById('menu_card_master').style.display = currentRole === 'Main' ? 'block' : 'none'; }
+function applyRBAC() { 
+    document.getElementById('role_badge').innerText = currentRole; 
+    document.getElementById('current_user_display').innerText = currentUser; 
+    
+    let editAreas = document.querySelectorAll('.rbac-edit-area'); 
+    editAreas.forEach(el => el.style.display = currentRole === 'View' ? 'none' : 'block'); 
+    
+    let editCols = document.querySelectorAll('.rbac-edit-col'); 
+    editCols.forEach(el => el.style.display = currentRole === 'View' ? 'none' : 'table-cell'); 
+    
+    document.getElementById('admin_user_management').style.display = currentRole === 'Main' ? 'block' : 'none'; 
+    document.getElementById('btn_admin_logs').style.display = currentRole === 'Main' ? 'flex' : 'none'; 
+    document.getElementById('menu_card_master').style.display = currentRole === 'Main' ? 'block' : 'none'; 
+    
+    // புதிதாக சேர்க்கப்பட்ட வரி: அட்மின் ஆக இருந்தால் யூசர் லிஸ்ட்டை லோட் செய்ய வேண்டும்
+    if (currentRole === 'Main') {
+        renderAdminUserManagement();
+    }
+}
 
 let authMode = "login";
 function toggleLoginPassword() { let passInput = document.getElementById('login_pass'); let eyeIcon = document.getElementById('eye_icon'); if(passInput.type === 'password') { passInput.type = 'text'; eyeIcon.innerText = '🙈'; } else { passInput.type = 'password'; eyeIcon.innerText = '👁️'; } }
@@ -625,10 +643,9 @@ function handleAuthAction() {
         // புதிய அக்கவுண்ட் உருவாக்குதல்
         firebaseAuth.createUserWithEmailAndPassword(userEmail, pass)
         .then((userCredential) => {
-            // பாதுகாப்பாக Role-ஐ டேட்டாபேஸில் சேமிப்பது
             firestoreDB.collection("gwc_users_roles").doc(userCredential.user.uid).set({
                 email: userEmail,
-                role: "View" // ஆரம்பத்தில் View Permission மட்டுமே இருக்கும்
+                role: "View" // ஆரம்பத்தில் View Permission
             });
             alert("🎉 Registered successfully! Please Login."); 
             toggleAuthMode('login'); 
@@ -649,19 +666,25 @@ function handleAuthAction() {
             err.classList.remove('hidden');
         });
     } else { 
-        // லாகின் சரிபார்த்தல் (Login Validation)
+        // லாகின் சரிபார்த்தல் & லாக் (Logs) பதிவு செய்தல்
         firebaseAuth.signInWithEmailAndPassword(userEmail, pass)
         .then((userCredential) => {
-            // லாகின் ஆனவுடன் டேட்டாபேஸில் இருந்து Role-ஐ எடுப்பது
             firestoreDB.collection("gwc_users_roles").doc(userCredential.user.uid).get().then((doc) => {
                 if (doc.exists) {
                     currentRole = doc.data().role;
                 } else {
                     currentRole = "View";
                 }
-                currentUser = userEmail.split('@')[0]; // Email-ல் உள்ள பெயரை மட்டும் எடுப்பது
+                currentUser = userEmail.split('@')[0]; 
                 
-                // Dashboard-ஐ ஓபன் செய்வது
+                // --- Logs (Session) பதிவு செய்யும் புதிய கோடிங் ---
+                let now = new Date();
+                let timeString = now.toLocaleDateString('en-IN') + " " + now.toLocaleTimeString('en-IN');
+                if (!db.activeSessions) db.activeSessions = [];
+                db.activeSessions.push({ username: userEmail, role: currentRole, time: timeString });
+                saveDB('activeSessions');
+                // --------------------------------------------------
+
                 document.getElementById('login_screen').classList.add('hidden'); 
                 document.getElementById('app_interface').classList.remove('hidden'); 
                 applyRBAC(); 
