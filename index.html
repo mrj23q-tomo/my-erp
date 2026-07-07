@@ -31,7 +31,7 @@
 .btn-3d:active { transform: translateY(5px); border-bottom-width: 0px; margin-bottom: 5px; }
 
 /* Mobile Responsive Table CSS */
-.table-grid th, .table-grid td { border: 1px solid #d1d5db; white-space: nowrap; padding: 0.5rem; }
+.table-grid th, .table-grid td { border: 1px solid #d1d5db; padding: 0.3rem 0.5rem; }
 .table-grid { border-collapse: collapse; }
 
 .search-input-ms { padding-right: 25px; cursor: text; }
@@ -455,7 +455,7 @@ box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 <table class="w-full text-[10px] md:text-[11px] text-center table-grid" id="fcr_table_export">
 <thead class="bg-gray-200 text-black font-bold uppercase">
 <tr>
-<th class="p-2 w-10 border border-gray-400">SL NO</th><th class="p-2 text-left min-w-[150px] border border-gray-400">FABRIC NAME</th><th class="p-2 text-left min-w-[120px] border border-gray-400">COLOR</th>
+<th class="p-2 w-10 border border-gray-400">SL NO</th><th class="p-2 text-left border border-gray-400">FABRIC NAME</th><th class="p-2 text-left border border-gray-400">COLOR</th>
 <th class="p-2 bg-pink-100 border border-gray-400">PO QTY</th><th class="p-2 bg-blue-100 border border-gray-400">OC GRN QTY</th><th class="p-2 bg-indigo-100 border border-gray-400">GRN BAL</th>
 <th class="p-2 bg-red-100 border border-gray-400">CUTTING ISSUE</th><th class="p-2 fcr-folding-head border border-gray-400">FOLDING</th><th class="p-2 bg-purple-100 border border-gray-400">SAMPLE</th>
 <th class="p-2 bg-gray-100 border border-gray-400">REPROCESS</th><th class="p-2 bg-yellow-100 border border-gray-400">CUT RETURN</th><th class="p-2 bg-green-100 border border-gray-400">HAND STOCK</th>
@@ -603,7 +603,7 @@ container.innerHTML = html;
 }
 
 function loadSavedThemes() { renderHeaderThemeButtons(); let savedBgTheme = localStorage.getItem('gwc_bg_theme') || 'th3'; applyTheme(savedBgTheme); }
-loadDataFromFirebase(); window.addEventListener('DOMContentLoaded', () => { loadSavedThemes(); setTimeout(() => { document.getElementById('intro_screen').style.display = 'none'; document.getElementById('login_screen').classList.remove('hidden'); }, 1200); });
+loadDataFromFirebase(); window.addEventListener('DOMContentLoaded', () => { loadSavedThemes(); setTimeout(() => { document.getElementById('intro_screen').style.display = 'none'; document.getElementById('login_screen').classList.remove('hidden'); }, 500); });
 function applyRBAC() { 
     document.getElementById('role_badge').innerText = currentRole; 
     document.getElementById('current_user_display').innerText = currentUser; 
@@ -667,6 +667,8 @@ function handleAuthAction() {
         });
     } else { 
         // லாகின் சரிபார்த்தல் & லாக் (Logs) பதிவு செய்தல்
+        let btn = document.getElementById('btn_auth_primary');
+btn.innerText = "⏳ Please wait..."; btn.disabled = true;
         firebaseAuth.signInWithEmailAndPassword(userEmail, pass)
         .then((userCredential) => {
             firestoreDB.collection("gwc_users_roles").doc(userCredential.user.uid).get().then((doc) => {
@@ -694,6 +696,7 @@ function handleAuthAction() {
         .catch((error) => {
             err.innerText = "❌ Invalid Email or Password!"; 
             err.classList.remove('hidden');
+            btn.innerText = "Log in"; btn.disabled = false;
         });
     } 
 }
